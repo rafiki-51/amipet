@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AddToCartButton } from "@/components/cart/AddToCartButton";
 import type { Product } from "@/types/product";
 import { formatCurrency } from "@/lib/format";
 
@@ -52,12 +53,10 @@ export function ProductCard({ product }: ProductCardProps) {
             Ver detalle
           </Link>
 
-          <button
-            type="button"
+          <AddToCartButton
+            product={product}
             className="flex-1 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
-          >
-            Agregar
-          </button>
+          />
         </div>
       </div>
     </article>

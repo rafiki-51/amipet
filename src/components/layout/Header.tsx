@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CartNavLink } from "@/components/cart/CartNavLink";
 
 export function Header() {
   return (
@@ -11,7 +12,7 @@ export function Header() {
         <nav className="flex items-center gap-4 text-sm font-medium text-slate-600">
           <Link href="/">Inicio</Link>
           <Link href="/catalogo">Catálogo</Link>
-          <Link href="/carrito">Carrito</Link>
+          <CartNavLink />
         </nav>
       </div>
     </header>

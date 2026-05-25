@@ -292,3 +292,33 @@ Eso ya convierte el sitio en e-commerce funcional MVP.
 
 Por ahora descanse comandante 😄
 Hoy ya construimos la base de Amipet. 🐶🐱🚀
+
+
+## Implementación del carrito
+
+Se agregó un sistema de carrito funcional usando Context API y localStorage.
+
+Archivos principales:
+
+- src/context/CartContext.tsx
+- src/components/cart/AddToCartButton.tsx
+- src/components/cart/CartNavLink.tsx
+- src/app/carrito/page.tsx
+
+Funcionalidades implementadas:
+
+- Agregar productos al carrito
+- Persistencia usando localStorage
+- Contador global en header
+- Aumentar/disminuir cantidades
+- Límite por stock
+- Eliminar productos
+- Vaciar carrito
+- Subtotal dinámico
+- Feedback visual al usuario
+- Manejo seguro de localStorage
+- Confirmación al vaciar carrito
+
+Objetivo:
+Convertir el catálogo estático en un flujo de compra funcional para el MVP.
+

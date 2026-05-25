@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AddToCartButton } from "@/components/cart/AddToCartButton";
 import { formatCurrency } from "@/lib/format";
 import { getProductBySlug } from "@/lib/products";
 
@@ -66,12 +67,11 @@ export default async function ProductDetailPage({
               </p>
             </div>
 
-            <button
-              type="button"
+            <AddToCartButton
+              product={product}
+              label="Agregar al carrito"
               className="mt-8 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
-            >
-              Agregar al carrito
-            </button>
+            />
           </div>
         </div>
       </div>
