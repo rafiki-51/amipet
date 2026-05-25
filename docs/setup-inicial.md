@@ -322,3 +322,22 @@ Funcionalidades implementadas:
 Objetivo:
 Convertir el catálogo estático en un flujo de compra funcional para el MVP.
 
+## Rediseño comercial de la home
+
+Se actualizó `src/app/page.tsx` para reemplazar la página temporal del MVP por una home comercial.
+
+La nueva home incluye:
+- Hero principal orientado a venta
+- CTA hacia catálogo
+- Espacio visual para logo/isotipo futuro
+- Mensaje de delivery gratis
+- Zonas de cobertura desde `siteConfig`
+- Categorías principales
+- Productos destacados desde `products`
+- Precios formateados con `formatCurrency`
+- Links hacia detalle de producto
+- Sección “Cómo funciona”
+- CTA final hacia catálogo
+
+Objetivo:
+Hacer que la página principal se sienta como una tienda real de alimento para mascotas y no como una página técnica en construcción.
