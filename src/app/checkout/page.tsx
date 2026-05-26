@@ -7,6 +7,7 @@ import { paymentMethods, type PaymentMethodId } from "@/config/payment";
 import { siteConfig } from "@/config/site";
 import { useCart } from "@/context/CartContext";
 import { formatCurrency } from "@/lib/format";
+import { addLocalOrder, type LocalOrder } from "@/lib/localOrders";
 import type { OrderItem } from "@/types/order";
 
 const lastOrderStorageKey = "amipet-last-order";
@@ -23,25 +24,6 @@ type CheckoutForm = {
 
 type CheckoutErrors = Partial<Record<keyof CheckoutForm, string>>;
 type CheckoutTouched = Partial<Record<keyof CheckoutForm, boolean>>;
-
-type LocalOrder = {
-  id: string;
-  customer: {
-    name: string;
-    phone: string;
-    district: string;
-    address: string;
-    references?: string;
-  };
-  items: OrderItem[];
-  paymentMethod: PaymentMethodId;
-  status: "recibido";
-  subtotal: number;
-  deliveryFee: 0;
-  total: number;
-  notes?: string;
-  createdAt: string;
-};
 
 const initialForm: CheckoutForm = {
   name: "",
@@ -159,6 +141,7 @@ export default function CheckoutPage() {
     };
 
     saveLastOrder(order);
+    addLocalOrder(order);
     setConfirmedOrder(order);
     clearCart();
   }
