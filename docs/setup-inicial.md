@@ -515,3 +515,18 @@ Resultado:
 
 El cambio se reflejó automáticamente en localhost sin modificar código.
 
+## Migración de catálogo y detalle a Supabase
+
+Se migraron las rutas públicas de productos para consumir datos desde Supabase/PostgreSQL.
+
+Rutas migradas:
+- /catalogo
+- /producto/[slug]
+
+Validaciones:
+- Catálogo muestra productos desde Supabase.
+- Cambios de precio en la base se reflejan en catálogo.
+- Detalle de producto carga por slug desde Supabase.
+- Slug inexistente devuelve 404.
+- Agregar al carrito desde detalle sigue funcionando.
+

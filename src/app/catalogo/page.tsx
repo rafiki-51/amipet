@@ -1,16 +1,27 @@
 import { ProductCard } from "@/components/products/ProductCard";
 import { siteConfig } from "@/config/site";
-import { getActiveProducts } from "@/lib/products-db";
+import { getActiveDeliveryZones, getActiveProducts } from "@/lib/products-db";
 import type { Product } from "@/types/product";
 
 export default async function CatalogoPage() {
   let products: Product[] = [];
+  let coverageZones = siteConfig.coverage;
 
   try {
     products = await getActiveProducts();
   } catch (error) {
     console.error("Failed to load catalog products from Supabase", error);
     products = [];
+  }
+
+  try {
+    const deliveryZones = await getActiveDeliveryZones();
+
+    if (deliveryZones.length > 0) {
+      coverageZones = deliveryZones.map((zone) => zone.name);
+    }
+  } catch (error) {
+    console.error("Failed to load delivery zones from Supabase", error);
   }
 
   return (
@@ -28,7 +39,7 @@ export default async function CatalogoPage() {
         </p>
 
         <div className="mt-4 flex flex-wrap gap-2">
-          {siteConfig.coverage.map((zone) => (
+          {coverageZones.map((zone) => (
             <span
               key={zone}
               className="rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-700"
