@@ -235,6 +235,7 @@ alter table public.order_status_history enable row level security;
 
 -- Public read for active products only.
 grant select on public.products to anon, authenticated;
+grant select on public.products to service_role;
 
 create policy "Public can read active products"
 on public.products
@@ -244,6 +245,7 @@ using (is_active = true);
 
 -- Public read for active delivery zones only.
 grant select on public.delivery_zones to anon, authenticated;
+grant select on public.delivery_zones to service_role;
 
 create policy "Public can read active delivery zones"
 on public.delivery_zones
@@ -256,6 +258,11 @@ using (is_active = true);
 -- With RLS enabled and no policies, direct client access is denied.
 -- Access should happen later through server-side API routes using service role
 -- or through authenticated admin policies.
+grant select, insert, update, delete on public.customers to service_role;
+grant select, insert, update, delete on public.addresses to service_role;
+grant select, insert, update, delete on public.orders to service_role;
+grant select, insert, update, delete on public.order_items to service_role;
+grant select, insert, update, delete on public.order_status_history to service_role;
 
 -- Profiles: users can read only their own profile.
 create policy "Users can read own profile"
