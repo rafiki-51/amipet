@@ -4,7 +4,6 @@ import Link from "next/link";
 import type { FormEvent } from "react";
 import { useMemo, useState } from "react";
 import { paymentMethods, type PaymentMethodId } from "@/config/payment";
-import { siteConfig } from "@/config/site";
 import { useCart } from "@/context/CartContext";
 import { formatCurrency } from "@/lib/format";
 import { addLocalOrder, type LocalOrder } from "@/lib/localOrders";
@@ -25,6 +24,10 @@ type CheckoutForm = {
 type CheckoutErrors = Partial<Record<keyof CheckoutForm, string>>;
 type CheckoutTouched = Partial<Record<keyof CheckoutForm, boolean>>;
 
+type CheckoutClientProps = {
+  coverageZones: string[];
+};
+
 const initialForm: CheckoutForm = {
   name: "",
   phone: "",
@@ -39,7 +42,10 @@ function countPhoneDigits(phone: string) {
   return phone.replace(/\D/g, "").length;
 }
 
-function validateForm(form: CheckoutForm): CheckoutErrors {
+function validateForm(
+  form: CheckoutForm,
+  coverageZones: string[],
+): CheckoutErrors {
   const errors: CheckoutErrors = {};
 
   if (form.name.trim().length < 3) {
@@ -50,7 +56,7 @@ function validateForm(form: CheckoutForm): CheckoutErrors {
     errors.phone = "Ingresá un teléfono o WhatsApp válido.";
   }
 
-  if (!siteConfig.coverage.includes(form.district)) {
+  if (!coverageZones.includes(form.district)) {
     errors.district = "Seleccioná una zona de entrega.";
   }
 
@@ -73,14 +79,17 @@ function saveLastOrder(order: LocalOrder) {
   }
 }
 
-export function CheckoutClient() {
+export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
   const { items, totalItems, subtotal, isHydrated, clearCart } = useCart();
   const [form, setForm] = useState<CheckoutForm>(initialForm);
   const [touched, setTouched] = useState<CheckoutTouched>({});
   const [submitted, setSubmitted] = useState(false);
   const [confirmedOrder, setConfirmedOrder] = useState<LocalOrder | null>(null);
 
-  const errors = useMemo(() => validateForm(form), [form]);
+  const errors = useMemo(
+    () => validateForm(form, coverageZones),
+    [coverageZones, form],
+  );
   const isFormValid = Object.keys(errors).length === 0;
   const canConfirm = isHydrated && items.length > 0 && isFormValid;
 
@@ -301,7 +310,7 @@ export function CheckoutClient() {
                     className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
                   >
                     <option value="">Seleccioná una zona</option>
-                    {siteConfig.coverage.map((zone) => (
+                    {coverageZones.map((zone) => (
                       <option key={zone} value={zone}>
                         {zone}
                       </option>
