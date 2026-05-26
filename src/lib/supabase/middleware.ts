@@ -17,7 +17,7 @@ function getRequiredEnv(name: string) {
   return value;
 }
 
-export async function updateSession(request: NextRequest) {
+export function createMiddlewareClient(request: NextRequest) {
   const supabaseUrl = getRequiredEnv("NEXT_PUBLIC_SUPABASE_URL");
   const supabaseAnonKey = getRequiredEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
   let response = NextResponse.next({
@@ -45,7 +45,18 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
+  return {
+    supabase,
+    getResponse() {
+      return response;
+    },
+  };
+}
+
+export async function updateSession(request: NextRequest) {
+  const { supabase, getResponse } = createMiddlewareClient(request);
+
   await supabase.auth.getUser();
 
-  return response;
+  return getResponse();
 }

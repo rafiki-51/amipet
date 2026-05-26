@@ -265,6 +265,8 @@ grant select, insert, update, delete on public.order_items to service_role;
 grant select, insert, update, delete on public.order_status_history to service_role;
 
 -- Profiles: users can read only their own profile.
+grant select on public.profiles to authenticated;
+
 create policy "Users can read own profile"
 on public.profiles
 for select
