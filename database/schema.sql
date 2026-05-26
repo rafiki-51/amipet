@@ -234,6 +234,8 @@ alter table public.profiles enable row level security;
 alter table public.order_status_history enable row level security;
 
 -- Public read for active products only.
+grant select on public.products to anon, authenticated;
+
 create policy "Public can read active products"
 on public.products
 for select
@@ -241,6 +243,8 @@ to anon, authenticated
 using (is_active = true);
 
 -- Public read for active delivery zones only.
+grant select on public.delivery_zones to anon, authenticated;
+
 create policy "Public can read active delivery zones"
 on public.delivery_zones
 for select

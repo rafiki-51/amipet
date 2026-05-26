@@ -1,8 +1,18 @@
 import { ProductCard } from "@/components/products/ProductCard";
 import { siteConfig } from "@/config/site";
-import { products } from "@/lib/products";
+import { getActiveProducts } from "@/lib/products-db";
+import type { Product } from "@/types/product";
 
-export default function CatalogoPage() {
+export default async function CatalogoPage() {
+  let products: Product[] = [];
+
+  try {
+    products = await getActiveProducts();
+  } catch (error) {
+    console.error("Failed to load catalog products from Supabase", error);
+    products = [];
+  }
+
   return (
     <main className="min-h-screen bg-white px-6 py-12 text-slate-900">
       <div className="mx-auto max-w-6xl">
@@ -28,11 +38,17 @@ export default function CatalogoPage() {
           ))}
         </div>
 
-        <section className="mt-10 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </section>
+        {products.length > 0 ? (
+          <section className="mt-10 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </section>
+        ) : (
+          <p className="mt-10 rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center text-slate-600">
+            No hay productos disponibles actualmente
+          </p>
+        )}
       </div>
     </main>
   );

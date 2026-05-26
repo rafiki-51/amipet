@@ -379,3 +379,113 @@ Incluye:
 
 Limitación:
 No es productivo todavía. No tiene autenticación, backend ni base de datos.
+
+# Integración inicial de Supabase
+
+Fecha: (hoy)
+
+## Objetivo
+
+Preparar la transición del MVP local basado en localStorage hacia una arquitectura con persistencia real usando PostgreSQL.
+
+## Arquitectura actual
+
+GitHub
+↓
+Vercel
+↓
+amipet.pro
+↓
+Supabase PostgreSQL
+
+## Proyecto Supabase
+
+Nombre del proyecto:
+
+amipet
+
+Configuración utilizada:
+
+- Data API: habilitado
+- Automatically expose new tables: deshabilitado
+- Automatic RLS: deshabilitado
+
+## Estructura local agregada
+
+database/
+├── schema.sql
+├── seed.sql
+└── README.md
+
+Descripción:
+
+schema.sql
+- extensiones
+- funciones
+- triggers
+- tablas
+- índices
+- RLS
+- policies
+
+seed.sql
+- zonas de entrega
+- productos iniciales
+
+README.md
+- documentación y pasos de ejecución
+
+## Tablas creadas en Supabase
+
+- products
+- delivery_zones
+- customers
+- addresses
+- pets
+- orders
+- order_items
+- profiles
+- order_status_history
+
+## Decisiones de negocio actuales
+
+Stock:
+- se descontará cuando el pedido pase a estado "preparando"
+
+Número de pedido:
+Formato planeado:
+
+AMI-YYYYMMDD-XXXX
+
+Ejemplo:
+
+AMI-20260525-0001
+
+Primer usuario administrador:
+
+Rafael
+Rol: admin
+
+## Estado actual del roadmap
+
+Completado:
+
+✅ Home comercial
+✅ Catálogo
+✅ Detalle producto
+✅ Carrito funcional
+✅ Checkout local MVP
+✅ Historial local
+✅ Admin local MVP
+✅ Diseño SQL
+✅ Proyecto Supabase
+✅ Base de datos inicial creada
+
+Pendiente:
+
+⬜ instalar cliente Supabase
+⬜ variables .env.local
+⬜ conectar catálogo a DB real
+⬜ migrar pedidos
+⬜ autenticación
+⬜ admin protegido
