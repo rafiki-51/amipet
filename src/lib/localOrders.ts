@@ -1,5 +1,5 @@
 import type { PaymentMethodId } from "@/config/payment";
-import type { OrderItem } from "@/types/order";
+import type { OrderItem, OrderStatus } from "@/types/order";
 
 const ordersStorageKey = "amipet-orders";
 
@@ -14,12 +14,13 @@ export type LocalOrder = {
   };
   items: OrderItem[];
   paymentMethod: PaymentMethodId;
-  status: "recibido";
+  status: OrderStatus;
   subtotal: number;
   deliveryFee: 0;
   total: number;
   notes?: string;
   createdAt: string;
+  updatedAt?: string;
 };
 
 function isLocalOrder(value: unknown): value is LocalOrder {
@@ -74,4 +75,19 @@ export function saveLocalOrders(orders: LocalOrder[]) {
 export function addLocalOrder(order: LocalOrder) {
   const currentOrders = getLocalOrders();
   saveLocalOrders([order, ...currentOrders]);
+}
+
+export function updateLocalOrderStatus(orderId: string, status: OrderStatus) {
+  const updatedOrders = getLocalOrders().map((order) =>
+    order.id === orderId
+      ? {
+          ...order,
+          status,
+          updatedAt: new Date().toISOString(),
+        }
+      : order,
+  );
+
+  saveLocalOrders(updatedOrders);
+  return updatedOrders;
 }

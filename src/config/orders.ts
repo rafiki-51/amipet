@@ -3,4 +3,5 @@ export const orderStatuses = [
   "preparando",
   "en-ruta",
   "entregado",
+  "cancelado",
 ] as const;
