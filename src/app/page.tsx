@@ -2,6 +2,7 @@ import Link from "next/link";
 import { siteConfig } from "@/config/site";
 import { formatCurrency } from "@/lib/format";
 import { products } from "@/lib/products";
+import { getActiveDeliveryZones } from "@/lib/products-db";
 
 const featuredProducts = products
   .filter((product) => product.isActive)
@@ -41,7 +42,19 @@ const steps = [
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  let coverageZones = siteConfig.coverage;
+
+  try {
+    const deliveryZones = await getActiveDeliveryZones();
+
+    if (deliveryZones.length > 0) {
+      coverageZones = deliveryZones.map((zone) => zone.name);
+    }
+  } catch (error) {
+    console.error("Failed to load delivery zones from Supabase", error);
+  }
+
   return (
     <main className="min-h-screen bg-white text-slate-900">
       <section className="bg-emerald-50/70 px-6 py-12 sm:py-16 lg:py-20">
@@ -157,7 +170,7 @@ export default function Home() {
             Llegamos a zonas clave del este
           </h2>
           <div className="mt-6 flex flex-wrap gap-2">
-            {siteConfig.coverage.map((zone) => (
+            {coverageZones.map((zone) => (
               <span
                 key={zone}
                 className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm"
