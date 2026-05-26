@@ -489,3 +489,29 @@ Pendiente:
 ⬜ migrar pedidos
 ⬜ autenticación
 ⬜ admin protegido
+
+## Integración catálogo → Supabase
+
+Estado: Completado
+
+Cambios realizados:
+
+- Se instaló @supabase/supabase-js
+- Se creó cliente Supabase
+- Se creó capa products-db
+- Se migró /catalogo
+- Se configuró RLS
+- Se agregaron GRANT SELECT para productos y zonas
+
+Validación realizada:
+
+Se modificó el precio de:
+
+Cat Chow Adultos 1.5kg
+
+6500 → 7550
+
+Resultado:
+
+El cambio se reflejó automáticamente en localhost sin modificar código.
+

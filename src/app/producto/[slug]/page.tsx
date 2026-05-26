@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AddToCartButton } from "@/components/cart/AddToCartButton";
 import { formatCurrency } from "@/lib/format";
-import { getProductBySlug } from "@/lib/products";
+import { getProductBySlug } from "@/lib/products-db";
 
 type ProductDetailPageProps = {
   params: Promise<{
@@ -14,7 +14,7 @@ export default async function ProductDetailPage({
   params,
 }: ProductDetailPageProps) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getProductBySlug(slug);
 
   if (!product) {
     notFound();
