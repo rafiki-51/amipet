@@ -362,3 +362,20 @@ Funcionalidades:
 
 Limitación:
 Este checkout es temporal y local. Antes de recibir pedidos reales debe migrarse a una API/backend con validación de precios, stock y persistencia en PostgreSQL.
+
+
+## Admin local MVP de pedidos
+
+Se implementó `/admin/pedidos` como panel operativo local.
+
+Incluye:
+- lectura de pedidos desde `amipet-orders`
+- lista de pedidos
+- detalle completo
+- filtros por estado, zona y método de pago
+- cambio de estado
+- marcar como entregado
+- persistencia en localStorage
+
+Limitación:
+No es productivo todavía. No tiene autenticación, backend ni base de datos.
