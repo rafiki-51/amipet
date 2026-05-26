@@ -341,3 +341,24 @@ La nueva home incluye:
 
 Objetivo:
 Hacer que la página principal se sienta como una tienda real de alimento para mascotas y no como una página técnica en construcción.
+
+## Checkout local MVP
+
+Se implementó un checkout funcional local en `src/app/checkout/page.tsx`.
+
+Archivos agregados/modificados:
+- src/app/checkout/page.tsx
+- src/config/payment.ts
+
+Funcionalidades:
+- Resumen del carrito
+- Formulario de datos del cliente
+- Selección de zona de entrega desde `siteConfig.coverage`
+- Selección de método de pago
+- Validaciones mínimas
+- Confirmación con número de pedido local
+- Guardado del último pedido en `localStorage`
+- Vaciado del carrito después de confirmar
+
+Limitación:
+Este checkout es temporal y local. Antes de recibir pedidos reales debe migrarse a una API/backend con validación de precios, stock y persistencia en PostgreSQL.
