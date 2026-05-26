@@ -6,10 +6,6 @@ import { useMemo, useState } from "react";
 import { paymentMethods, type PaymentMethodId } from "@/config/payment";
 import { useCart } from "@/context/CartContext";
 import { formatCurrency } from "@/lib/format";
-import { addLocalOrder, type LocalOrder } from "@/lib/localOrders";
-import type { OrderItem } from "@/types/order";
-
-const lastOrderStorageKey = "amipet-last-order";
 
 type CheckoutForm = {
   name: string;
@@ -26,6 +22,44 @@ type CheckoutTouched = Partial<Record<keyof CheckoutForm, boolean>>;
 
 type CheckoutClientProps = {
   coverageZones: string[];
+};
+
+type CreateOrderPayload = {
+  customer: {
+    name: string;
+    phone: string;
+  };
+  delivery: {
+    zoneName: string;
+    address: string;
+    references?: string;
+  };
+  paymentMethod: PaymentMethodId;
+  notes?: string;
+  items: Array<{
+    productId: string;
+    quantity: number;
+  }>;
+};
+
+type CreateOrderResponse = {
+  orderId: string;
+  orderNumber: string;
+  status: "recibido";
+  subtotal: number;
+  deliveryFee: number;
+  total: number;
+};
+
+type ApiErrorResponse = {
+  error: string;
+  code: string;
+};
+
+type ConfirmedOrder = CreateOrderResponse & {
+  customerName: string;
+  paymentMethod: PaymentMethodId;
+  totalItems: number;
 };
 
 const initialForm: CheckoutForm = {
@@ -71,11 +105,19 @@ function validateForm(
   return errors;
 }
 
-function saveLastOrder(order: LocalOrder) {
-  try {
-    window.localStorage.setItem(lastOrderStorageKey, JSON.stringify(order));
-  } catch {
-    // The confirmation still works even if local storage is unavailable.
+function getSubmitErrorMessage(errorResponse: ApiErrorResponse | null) {
+  switch (errorResponse?.code) {
+    case "INVALID_JSON":
+    case "INVALID_PAYLOAD":
+      return "Revisá los datos del pedido e intentá nuevamente.";
+    case "DELIVERY_ZONE_NOT_FOUND":
+      return "La zona seleccionada ya no está disponible.";
+    case "PRODUCT_NOT_FOUND":
+      return "Uno o más productos ya no están disponibles.";
+    case "INSUFFICIENT_STOCK":
+      return "No hay stock suficiente para uno o más productos.";
+    default:
+      return "No pudimos confirmar el pedido. Intentá nuevamente en unos minutos.";
   }
 }
 
@@ -84,14 +126,19 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
   const [form, setForm] = useState<CheckoutForm>(initialForm);
   const [touched, setTouched] = useState<CheckoutTouched>({});
   const [submitted, setSubmitted] = useState(false);
-  const [confirmedOrder, setConfirmedOrder] = useState<LocalOrder | null>(null);
+  const [confirmedOrder, setConfirmedOrder] = useState<ConfirmedOrder | null>(
+    null,
+  );
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const errors = useMemo(
     () => validateForm(form, coverageZones),
     [coverageZones, form],
   );
   const isFormValid = Object.keys(errors).length === 0;
-  const canConfirm = isHydrated && items.length > 0 && isFormValid;
+  const canConfirm =
+    isHydrated && items.length > 0 && isFormValid && !isSubmitting;
 
   function updateField<Field extends keyof CheckoutForm>(
     field: Field,
@@ -114,45 +161,71 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
     return submitted || touched[field] ? errors[field] : undefined;
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitted(true);
+    setSubmitError(null);
 
-    if (!canConfirm || form.paymentMethod === "") {
+    if (isSubmitting || !canConfirm || form.paymentMethod === "") {
       return;
     }
 
-    const orderItems = items.map<OrderItem>((item) => ({
-      productId: item.product.id,
-      productName: item.product.name,
-      quantity: item.quantity,
-      unitPrice: item.product.price,
-      subtotal: item.product.price * item.quantity,
-    }));
-
-    const order: LocalOrder = {
-      id: `AMI-${Date.now()}`,
+    const payload: CreateOrderPayload = {
       customer: {
         name: form.name.trim(),
         phone: form.phone.trim(),
-        district: form.district,
+      },
+      delivery: {
+        zoneName: form.district,
         address: form.address.trim(),
         references: form.references.trim() || undefined,
       },
-      items: orderItems,
       paymentMethod: form.paymentMethod,
-      status: "recibido",
-      subtotal,
-      deliveryFee: 0,
-      total: subtotal,
       notes: form.notes.trim() || undefined,
-      createdAt: new Date().toISOString(),
+      items: items.map((item) => ({
+        productId: item.product.id,
+        quantity: item.quantity,
+      })),
     };
 
-    saveLastOrder(order);
-    addLocalOrder(order);
-    setConfirmedOrder(order);
-    clearCart();
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const responseBody = (await response.json()) as
+        | CreateOrderResponse
+        | ApiErrorResponse;
+
+      if (!response.ok) {
+        setSubmitError(
+          getSubmitErrorMessage(responseBody as ApiErrorResponse | null),
+        );
+        return;
+      }
+
+      const createdOrder = responseBody as CreateOrderResponse;
+
+      setConfirmedOrder({
+        ...createdOrder,
+        customerName: form.name.trim(),
+        paymentMethod: form.paymentMethod,
+        totalItems,
+      });
+      clearCart();
+    } catch {
+      setSubmitError(
+        "No pudimos conectar con el servidor. Revisá tu conexión e intentá de nuevo.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   if (confirmedOrder) {
@@ -167,12 +240,12 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
             Pedido recibido
           </p>
           <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-            Gracias, {confirmedOrder.customer.name}
+            Gracias, {confirmedOrder.customerName}
           </h1>
           <p className="mt-4 text-slate-700">
             Tu número de pedido es{" "}
             <span className="font-bold text-emerald-800">
-              {confirmedOrder.id}
+              {confirmedOrder.orderNumber}
             </span>
             .
           </p>
@@ -187,16 +260,27 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
               <div className="flex justify-between gap-4">
                 <span>Productos</span>
                 <span className="font-medium text-slate-900">
-                  {confirmedOrder.items.reduce(
-                    (total, item) => total + item.quantity,
-                    0,
-                  )}
+                  {confirmedOrder.totalItems}
                 </span>
               </div>
               <div className="flex justify-between gap-4">
                 <span>Método de pago</span>
                 <span className="text-right font-medium text-slate-900">
                   {selectedPayment?.label}
+                </span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span>Subtotal</span>
+                <span className="font-medium text-slate-900">
+                  {formatCurrency(confirmedOrder.subtotal)}
+                </span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span>Delivery</span>
+                <span className="font-medium text-slate-900">
+                  {confirmedOrder.deliveryFee === 0
+                    ? "Gratis"
+                    : formatCurrency(confirmedOrder.deliveryFee)}
                 </span>
               </div>
               <div className="flex justify-between gap-4 border-t border-slate-200 pt-3 text-base">
@@ -413,12 +497,18 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
                 </fieldset>
               </div>
 
+              {submitError ? (
+                <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {submitError}
+                </p>
+              ) : null}
+
               <button
                 type="submit"
                 disabled={!canConfirm}
                 className="mt-6 w-full rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
               >
-                Confirmar pedido
+                {isSubmitting ? "Confirmando..." : "Confirmar pedido"}
               </button>
             </form>
 
