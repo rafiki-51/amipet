@@ -1,19 +1,24 @@
-import { orderStatuses } from "@/config/orders";
-import { paymentMethods } from "@/config/payment";
-import { formatCurrency } from "@/lib/format";
-import type { LocalOrder } from "@/lib/localOrders";
 import {
   getOrderStatusLabel,
   OrderStatusBadge,
 } from "@/components/admin/OrderStatusBadge";
+import { orderStatuses } from "@/config/orders";
+import { paymentMethods } from "@/config/payment";
+import { formatCurrency } from "@/lib/format";
+import type { AdminOrder } from "@/types/admin-order";
 import type { OrderStatus } from "@/types/order";
 
 type OrderDetailProps = {
-  order: LocalOrder;
+  order: AdminOrder;
   onStatusChange: (orderId: string, status: OrderStatus) => void;
+  isUpdatingStatus: boolean;
 };
 
-export function OrderDetail({ order, onStatusChange }: OrderDetailProps) {
+export function OrderDetail({
+  order,
+  onStatusChange,
+  isUpdatingStatus,
+}: OrderDetailProps) {
   const paymentMethod = paymentMethods.find(
     (method) => method.id === order.paymentMethod,
   );
@@ -30,7 +35,7 @@ export function OrderDetail({ order, onStatusChange }: OrderDetailProps) {
             Detalle del pedido
           </p>
           <h2 className="mt-2 text-2xl font-bold text-slate-900">
-            {order.id}
+            {order.orderNumber}
           </h2>
           <p className="mt-1 text-sm text-slate-500">{createdAt}</p>
         </div>
@@ -46,12 +51,12 @@ export function OrderDetail({ order, onStatusChange }: OrderDetailProps) {
               {order.customer.name}
             </p>
             <p>
-              <span className="font-medium text-slate-900">Teléfono:</span>{" "}
+              <span className="font-medium text-slate-900">Telefono:</span>{" "}
               {order.customer.phone}
             </p>
             <p>
               <span className="font-medium text-slate-900">Zona:</span>{" "}
-              {order.customer.district}
+              {order.delivery.zoneName}
             </p>
           </div>
         </div>
@@ -60,12 +65,12 @@ export function OrderDetail({ order, onStatusChange }: OrderDetailProps) {
           <h3 className="font-semibold text-slate-900">Entrega</h3>
           <div className="mt-3 space-y-2 text-sm text-slate-600">
             <p>
-              <span className="font-medium text-slate-900">Dirección:</span>{" "}
-              {order.customer.address}
+              <span className="font-medium text-slate-900">Direccion:</span>{" "}
+              {order.delivery.address}
             </p>
             <p>
               <span className="font-medium text-slate-900">Referencias:</span>{" "}
-              {order.customer.references || "Sin referencias"}
+              {order.delivery.references || "Sin referencias"}
             </p>
           </div>
         </div>
@@ -78,7 +83,7 @@ export function OrderDetail({ order, onStatusChange }: OrderDetailProps) {
         <div className="divide-y divide-slate-200">
           {order.items.map((item) => (
             <div
-              key={`${order.id}-${item.productId}`}
+              key={item.id}
               className="grid gap-2 px-4 py-3 text-sm sm:grid-cols-[1fr_auto]"
             >
               <div>
@@ -102,12 +107,16 @@ export function OrderDetail({ order, onStatusChange }: OrderDetailProps) {
           <h3 className="font-semibold text-slate-900">Pago y notas</h3>
           <div className="mt-3 space-y-2 text-sm text-slate-600">
             <p>
-              <span className="font-medium text-slate-900">Método:</span>{" "}
+              <span className="font-medium text-slate-900">Metodo:</span>{" "}
               {paymentMethod?.label || order.paymentMethod}
             </p>
             <p>
               <span className="font-medium text-slate-900">Notas:</span>{" "}
               {order.notes || "Sin notas"}
+            </p>
+            <p>
+              <span className="font-medium text-slate-900">Notas admin:</span>{" "}
+              {order.adminNotes || "Sin notas"}
             </p>
           </div>
         </div>
@@ -146,6 +155,7 @@ export function OrderDetail({ order, onStatusChange }: OrderDetailProps) {
           </span>
           <select
             value={order.status}
+            disabled={isUpdatingStatus}
             onChange={(event) =>
               onStatusChange(order.id, event.target.value as OrderStatus)
             }
@@ -161,11 +171,11 @@ export function OrderDetail({ order, onStatusChange }: OrderDetailProps) {
 
         <button
           type="button"
-          disabled={order.status === "entregado"}
+          disabled={order.status === "entregado" || isUpdatingStatus}
           onClick={() => onStatusChange(order.id, "entregado")}
           className="mt-3 w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
         >
-          Marcar como entregado
+          {isUpdatingStatus ? "Actualizando..." : "Marcar como entregado"}
         </button>
       </div>
     </section>

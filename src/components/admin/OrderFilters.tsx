@@ -1,7 +1,6 @@
+import { getOrderStatusLabel } from "@/components/admin/OrderStatusBadge";
 import { orderStatuses } from "@/config/orders";
 import { paymentMethods, type PaymentMethodId } from "@/config/payment";
-import { siteConfig } from "@/config/site";
-import { getOrderStatusLabel } from "@/components/admin/OrderStatusBadge";
 import type { OrderStatus } from "@/types/order";
 
 export type OrderFilterState = {
@@ -12,10 +11,11 @@ export type OrderFilterState = {
 
 type OrderFiltersProps = {
   filters: OrderFilterState;
+  zones: string[];
   onChange: (filters: OrderFilterState) => void;
 };
 
-export function OrderFilters({ filters, onChange }: OrderFiltersProps) {
+export function OrderFilters({ filters, zones, onChange }: OrderFiltersProps) {
   return (
     <section className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-3">
       <label className="block">
@@ -56,7 +56,7 @@ export function OrderFilters({ filters, onChange }: OrderFiltersProps) {
           className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
         >
           <option value="todas">Todas</option>
-          {siteConfig.coverage.map((zone) => (
+          {zones.map((zone) => (
             <option key={zone} value={zone}>
               {zone}
             </option>
