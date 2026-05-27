@@ -31,26 +31,12 @@ export async function middleware(request: NextRequest) {
   const { supabase, getResponse } = createMiddlewareClient(request);
   const {
     data: { user },
-    error: authError,
   } = await supabase.auth.getUser();
   const response = getResponse();
 
   if (pathname === "/admin/login") {
     return response;
   }
-
-  console.log("[admin middleware] Auth check", {
-    pathname,
-    hasUser: Boolean(user),
-    userId: user?.id ?? null,
-    email: user?.email ?? null,
-    authError: authError
-      ? {
-          message: authError.message,
-          status: authError.status,
-        }
-      : null,
-  });
 
   if (!user) {
     return redirectWithCookies(request, response, "/admin/login");
@@ -61,20 +47,6 @@ export async function middleware(request: NextRequest) {
     .select("role")
     .eq("id", user.id)
     .maybeSingle();
-
-  console.log("[admin middleware] Profile check", {
-    userId: user.id,
-    hasProfile: Boolean(profile),
-    role: profile?.role ?? null,
-    profileError: error
-      ? {
-          message: error.message,
-          code: error.code,
-          details: error.details,
-          hint: error.hint,
-        }
-      : null,
-  });
 
   if (error) {
     console.error("Failed to load admin profile in middleware", error);

@@ -530,3 +530,150 @@ Validaciones:
 - Slug inexistente devuelve 404.
 - Agregar al carrito desde detalle sigue funcionando.
 
+## Migración de zonas a Supabase
+
+Se migraron las zonas de cobertura para consumir datos desde la tabla `delivery_zones` en Supabase.
+
+Rutas actualizadas:
+- `/`
+- `/catalogo`
+- `/checkout`
+
+Implementación:
+- Se reutilizó `getActiveDeliveryZones()` desde `src/lib/products-db.ts`.
+- Las zonas se cargan desde Supabase cuando está disponible.
+- Se mantiene fallback temporal a `siteConfig.coverage`.
+
+Decisión:
+En checkout, la zona se sigue guardando como texto (`district`) para mantener compatibilidad con el flujo actual. La migración a `delivery_zone_id` queda pendiente para una fase posterior.
+
+## API real de pedidos
+
+Se implementó `POST /api/orders` para crear pedidos reales en Supabase/PostgreSQL.
+
+Archivos principales:
+- `src/app/api/orders/route.ts`
+- `src/lib/supabase/admin.ts`
+
+Funcionalidades:
+- Validación server-side del payload.
+- Validación de zona activa.
+- Validación de productos activos.
+- Validación de stock suficiente.
+- Cálculo server-side de subtotal, delivery y total.
+- Generación de número de pedido.
+- Inserción en:
+  - `customers`
+  - `addresses`
+  - `orders`
+  - `order_items`
+  - `order_status_history`
+
+Decisiones:
+- El cliente no envía precios ni totales.
+- El servidor es la fuente de verdad.
+- No se descuenta stock al crear el pedido.
+- El stock se descontará cuando el pedido pase a `preparando`.
+
+## Checkout conectado a backend real
+
+Se actualizó el checkout para crear pedidos reales usando `POST /api/orders`.
+
+Archivo principal:
+- `src/components/checkout/CheckoutClient.tsx`
+
+Cambios:
+- El checkout construye un payload mínimo con datos del cliente, zona, dirección, método de pago, notas e ítems.
+- Envía únicamente `productId` y `quantity`.
+- No envía precios, subtotales, totales ni número de pedido.
+- Limpia el carrito solo si la API responde correctamente.
+- Muestra confirmación usando el `orderNumber` real generado por backend.
+- Si la API falla, conserva carrito y formulario.
+
+Estado:
+El checkout ya no usa `amipet-orders` ni `amipet-last-order` como backend de pedidos.
+
+## Admin real conectado a Supabase
+
+Se migró `/admin/pedidos` desde localStorage hacia Supabase.
+
+APIs creadas:
+- `GET /api/admin/orders`
+- `PATCH /api/admin/orders/[id]/status`
+
+Archivos principales:
+- `src/app/api/admin/orders/route.ts`
+- `src/app/api/admin/orders/[id]/status/route.ts`
+- `src/types/admin-order.ts`
+- `src/app/admin/pedidos/page.tsx`
+- `src/components/admin/OrderCard.tsx`
+- `src/components/admin/OrderDetail.tsx`
+- `src/components/admin/OrderFilters.tsx`
+
+Funcionalidades:
+- El admin lee pedidos reales desde Supabase.
+- Muestra datos del cliente, dirección, zona, productos, totales y método de pago.
+- Permite cambiar estado del pedido.
+- Permite marcar pedido como entregado.
+- Cada cambio de estado se registra en `order_status_history`.
+- Los filtros se mantienen en cliente.
+
+Estados soportados:
+- `recibido`
+- `preparando`
+- `en-ruta`
+- `entregado`
+- `cancelado`
+
+Estado:
+El admin ya no usa `localStorage` ni `amipet-orders`.
+
+## Supabase Auth para admin
+
+Se agregó autenticación administrativa con Supabase Auth.
+
+Dependencias:
+- `@supabase/ssr`
+
+Archivos creados:
+- `src/lib/supabase/browser.ts`
+- `src/lib/supabase/server.ts`
+- `src/lib/supabase/middleware.ts`
+- `src/app/admin/login/page.tsx`
+
+Funcionamiento:
+- Login admin con email/password.
+- Sesión gestionada mediante cookies.
+- Primer usuario admin creado manualmente en Supabase Auth.
+- Perfil admin registrado en la tabla `profiles`.
+
+Primer admin:
+- Rafael
+- role: `admin`
+
+## Protección de rutas admin
+
+Se implementó middleware para proteger la UI administrativa.
+
+Archivo principal:
+- `src/middleware.ts`
+
+Protección:
+- `/admin/login` permanece público.
+- `/admin/*` requiere sesión Supabase.
+- Se consulta `profiles` para validar rol.
+- Solo roles permitidos:
+  - `admin`
+  - `operator`
+
+Comportamiento:
+- Sin sesión: redirección a `/admin/login`.
+- Con sesión pero sin rol válido: redirección a `/admin/login?error=unauthorized`.
+- Con rol válido: acceso permitido a `/admin/pedidos`.
+
+Permiso adicional requerido:
+- Se agregó `GRANT SELECT` sobre `profiles` para el rol `authenticated`.
+
+```sql
+grant select on public.profiles to authenticated;
+
