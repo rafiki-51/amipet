@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireAdminApiSession } from "@/lib/admin/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import type { AdminOrder } from "@/types/admin-order";
 import type { PaymentMethodId } from "@/config/payment";
@@ -110,6 +111,12 @@ function mapOrderRowToAdminOrder(row: OrderRow): AdminOrder {
 }
 
 export async function GET() {
+  const authResponse = await requireAdminApiSession();
+
+  if (authResponse) {
+    return authResponse;
+  }
+
   try {
     const { data, error } = await supabaseAdmin
       .from("orders")

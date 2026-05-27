@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { orderStatuses } from "@/config/orders";
+import { requireAdminApiSession } from "@/lib/admin/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import type { OrderStatus } from "@/types/order";
 
@@ -24,6 +25,12 @@ function isOrderStatus(value: unknown): value is OrderStatus {
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
+  const authResponse = await requireAdminApiSession();
+
+  if (authResponse) {
+    return authResponse;
+  }
+
   const { id } = await params;
   let payload: StatusPayload;
 
