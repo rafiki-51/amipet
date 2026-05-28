@@ -174,7 +174,7 @@ for each row execute function public.set_updated_at();
 create table public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text not null,
-  role text not null default 'admin' check (role in ('admin', 'operator')),
+  role text not null default 'admin' check (role in ('admin', 'operator', 'customer')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -183,6 +183,47 @@ create index profiles_role_idx on public.profiles (role);
 
 create trigger set_profiles_updated_at
 before update on public.profiles
+for each row execute function public.set_updated_at();
+
+-- Customer account profiles
+create table public.customer_profiles (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade unique,
+  full_name text not null,
+  phone text,
+  preferences jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index customer_profiles_user_id_idx
+on public.customer_profiles (user_id);
+
+create trigger set_customer_profiles_updated_at
+before update on public.customer_profiles
+for each row execute function public.set_updated_at();
+
+-- Customer saved addresses
+create table public.customer_addresses (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  delivery_zone_id uuid references public.delivery_zones(id),
+  label text,
+  address text not null,
+  delivery_references text,
+  is_default boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index customer_addresses_user_id_idx
+on public.customer_addresses (user_id);
+
+create index customer_addresses_delivery_zone_id_idx
+on public.customer_addresses (delivery_zone_id);
+
+create trigger set_customer_addresses_updated_at
+before update on public.customer_addresses
 for each row execute function public.set_updated_at();
 
 -- Optional status history for auditing order status changes
@@ -231,6 +272,8 @@ alter table public.pets enable row level security;
 alter table public.orders enable row level security;
 alter table public.order_items enable row level security;
 alter table public.profiles enable row level security;
+alter table public.customer_profiles enable row level security;
+alter table public.customer_addresses enable row level security;
 alter table public.order_status_history enable row level security;
 
 -- Public read for active products only.
@@ -272,6 +315,58 @@ on public.profiles
 for select
 to authenticated
 using (auth.uid() = id);
+
+-- Customer profiles: authenticated users can manage only their own data.
+grant select, insert, update on public.customer_profiles to authenticated;
+grant select, insert, update, delete on public.customer_profiles to service_role;
+
+create policy "Users can read own customer profile"
+on public.customer_profiles
+for select
+to authenticated
+using (auth.uid() = user_id);
+
+create policy "Users can insert own customer profile"
+on public.customer_profiles
+for insert
+to authenticated
+with check (auth.uid() = user_id);
+
+create policy "Users can update own customer profile"
+on public.customer_profiles
+for update
+to authenticated
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+-- Customer addresses: authenticated users can manage only their own addresses.
+grant select, insert, update, delete on public.customer_addresses to authenticated;
+grant select, insert, update, delete on public.customer_addresses to service_role;
+
+create policy "Users can read own customer addresses"
+on public.customer_addresses
+for select
+to authenticated
+using (auth.uid() = user_id);
+
+create policy "Users can insert own customer addresses"
+on public.customer_addresses
+for insert
+to authenticated
+with check (auth.uid() = user_id);
+
+create policy "Users can update own customer addresses"
+on public.customer_addresses
+for update
+to authenticated
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+create policy "Users can delete own customer addresses"
+on public.customer_addresses
+for delete
+to authenticated
+using (auth.uid() = user_id);
 
 -- Important:
 -- No self-update policy for profiles in this MVP schema.
