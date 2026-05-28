@@ -677,3 +677,97 @@ Permiso adicional requerido:
 ```sql
 grant select on public.profiles to authenticated;
 
+## Seguridad administrativa
+
+Se implementó autenticación y protección para el área administrativa usando Supabase Auth.
+
+### Login admin
+
+Ruta creada:
+
+- `/admin/login`
+
+Funcionalidad:
+- Login con email/password usando Supabase Auth.
+- Sesión gestionada con cookies mediante `@supabase/ssr`.
+- Redirección automática a `/admin/pedidos` después de login exitoso.
+
+### Roles administrativos
+
+Se utiliza la tabla `profiles` para validar roles.
+
+Roles permitidos:
+- `admin`
+- `operator`
+
+Primer usuario admin:
+- Rafael
+- role: `admin`
+
+### Middleware admin
+
+Se implementó middleware para proteger rutas administrativas.
+
+Protección:
+- `/admin/login` permanece público.
+- `/admin/*` requiere sesión activa.
+- El middleware consulta `profiles`.
+- Solo usuarios con rol `admin` u `operator` pueden acceder.
+
+Comportamiento:
+- Sin sesión: redirige a `/admin/login`.
+- Sin rol válido: redirige a `/admin/login?error=unauthorized`.
+
+### APIs admin protegidas
+
+Se protegieron las APIs administrativas:
+
+- `GET /api/admin/orders`
+- `PATCH /api/admin/orders/[id]/status`
+
+Validación:
+- Sin sesión: responde `401 Unauthorized`.
+- Con sesión pero sin rol válido: responde `403 Forbidden`.
+- Con rol válido: permite consultar o actualizar pedidos.
+
+### Logout admin
+
+Se agregó botón de cierre de sesión en `/admin/pedidos`.
+
+Funcionalidad:
+- Ejecuta `supabase.auth.signOut()`.
+- Redirige a `/admin/login`.
+- Después de cerrar sesión, `/admin/pedidos` vuelve a estar protegido.
+
+## Estado actual actualizado
+
+Completado:
+
+✅ Home comercial  
+✅ Catálogo desde Supabase  
+✅ Detalle de producto desde Supabase  
+✅ Zonas desde Supabase  
+✅ Carrito funcional  
+✅ Checkout conectado a API real  
+✅ Pedidos reales en PostgreSQL  
+✅ Admin conectado a Supabase  
+✅ Cambio de estado real  
+✅ Historial de estados  
+✅ Supabase Auth admin  
+✅ Middleware protegiendo `/admin/*`  
+✅ APIs admin protegidas  
+✅ Logout admin  
+
+Pendiente:
+
+⬜ Deploy en Vercel  
+⬜ Configurar variables de entorno en Vercel  
+⬜ Apuntar `amipet.pro` a Vercel  
+⬜ Imágenes reales de productos  
+⬜ Política de privacidad básica  
+⬜ Términos y condiciones básicos  
+⬜ Contacto/WhatsApp visible  
+⬜ Descuento de stock al pasar a `preparando`  
+⬜ Gestión de productos desde admin  
+⬜ Login/registro opcional para clientes  
+⬜ Perfil de cliente, mascotas e historial  
