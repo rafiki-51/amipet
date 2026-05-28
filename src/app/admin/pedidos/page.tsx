@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { AdminLogoutButton } from "@/components/admin/AdminLogoutButton";
 import { OrderCard } from "@/components/admin/OrderCard";
 import { OrderDetail } from "@/components/admin/OrderDetail";
 import {
@@ -175,9 +176,7 @@ export default function AdminPedidosPage() {
               esta protegido por login.
             </p>
           </div>
-          <div className="rounded-full bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-800">
-            MVP sin Auth
-          </div>
+          <AdminLogoutButton />
         </div>
 
         {loadError ? (
