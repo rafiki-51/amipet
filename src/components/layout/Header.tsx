@@ -12,6 +12,8 @@ export function Header() {
         <nav className="flex items-center gap-4 text-sm font-medium text-slate-600">
           <Link href="/">Inicio</Link>
           <Link href="/catalogo">Catálogo</Link>
+          <Link href="/login">Iniciar sesion</Link>
+          <Link href="/registro">Crear cuenta</Link>
           <CartNavLink />
         </nav>
       </div>

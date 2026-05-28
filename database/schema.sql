@@ -226,6 +226,31 @@ create trigger set_customer_addresses_updated_at
 before update on public.customer_addresses
 for each row execute function public.set_updated_at();
 
+-- Automatically create customer profile rows for new Auth users.
+create or replace function public.handle_new_customer_user()
+returns trigger
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (id, email, role)
+  values (new.id, new.email, 'customer');
+
+  insert into public.customer_profiles (user_id, full_name, phone)
+  values (
+    new.id,
+    new.raw_user_meta_data->>'full_name',
+    new.raw_user_meta_data->>'phone'
+  );
+
+  return new;
+end;
+$$ language plpgsql;
+
+create trigger on_auth_user_created_create_customer_profile
+after insert on auth.users
+for each row execute function public.handle_new_customer_user();
+
 -- Optional status history for auditing order status changes
 create table public.order_status_history (
   id uuid primary key default gen_random_uuid(),
@@ -309,12 +334,19 @@ grant select, insert, update, delete on public.order_status_history to service_r
 
 -- Profiles: users can read only their own profile.
 grant select on public.profiles to authenticated;
+grant insert on public.profiles to authenticated;
 
 create policy "Users can read own profile"
 on public.profiles
 for select
 to authenticated
 using (auth.uid() = id);
+
+create policy "Users can insert own customer profile"
+on public.profiles
+for insert
+to authenticated
+with check (auth.uid() = id and role = 'customer');
 
 -- Customer profiles: authenticated users can manage only their own data.
 grant select, insert, update on public.customer_profiles to authenticated;
