@@ -131,9 +131,17 @@ export default async function MascotaDetallePage({
                 mascota.
               </p>
             </div>
-            <span className="inline-flex rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800">
-              {displayValue(pet.species)}
-            </span>
+            <div className="flex flex-col gap-3 sm:items-end">
+              <span className="inline-flex rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800">
+                {displayValue(pet.species)}
+              </span>
+              <Link
+                href={`/mi-cuenta/mascotas/${pet.id}/editar`}
+                className="inline-flex justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-100"
+              >
+                Editar mascota
+              </Link>
+            </div>
           </div>
         </header>
 

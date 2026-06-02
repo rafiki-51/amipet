@@ -25,14 +25,18 @@ function redirectWithError(error: string): never {
   redirect(`/mi-cuenta/mascotas/nueva?error=${error}`);
 }
 
-export async function createPet(formData: FormData) {
+function redirectEditWithError(petId: string, error: string): never {
+  redirect(`/mi-cuenta/mascotas/${petId}/editar?error=${error}`);
+}
+
+async function requireCustomerUser(redirectPath: string) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login?redirect=/mi-cuenta/mascotas/nueva");
+    redirect(`/login?redirect=${redirectPath}`);
   }
 
   const { data: profile, error: profileError } = await supabase
@@ -43,7 +47,7 @@ export async function createPet(formData: FormData) {
 
   if (profileError) {
     console.error("Failed to validate pet owner profile", profileError);
-    redirectWithError("profile");
+    return { supabase, user, profile: null, profileError };
   }
 
   if (profile && adminRoles.has(profile.role as string)) {
@@ -52,6 +56,18 @@ export async function createPet(formData: FormData) {
 
   if (!profile || profile.role !== "customer") {
     redirect("/login");
+  }
+
+  return { supabase, user, profile, profileError: null };
+}
+
+export async function createPet(formData: FormData) {
+  const { supabase, user, profileError } = await requireCustomerUser(
+    "/mi-cuenta/mascotas/nueva",
+  );
+
+  if (profileError) {
+    redirectWithError("profile");
   }
 
   const name = getString(formData, "name");
@@ -95,4 +111,75 @@ export async function createPet(formData: FormData) {
   }
 
   redirect("/mi-cuenta/mascotas");
+}
+
+export async function updatePet(petId: string, formData: FormData) {
+  const { supabase, user, profileError } = await requireCustomerUser(
+    `/mi-cuenta/mascotas/${petId}/editar`,
+  );
+
+  if (profileError) {
+    redirectEditWithError(petId, "profile");
+  }
+
+  const { data: existingPet, error: existingPetError } = await supabase
+    .from("pets")
+    .select("id")
+    .eq("id", petId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (existingPetError) {
+    console.error("Failed to validate customer pet ownership", existingPetError);
+    redirectEditWithError(petId, "save");
+  }
+
+  if (!existingPet) {
+    redirect("/mi-cuenta/mascotas");
+  }
+
+  const name = getString(formData, "name");
+  const species = getString(formData, "species");
+  const sex = getString(formData, "sex") || "unknown";
+  const weightValue = getString(formData, "weight");
+
+  if (!name || !species) {
+    redirectEditWithError(petId, "required");
+  }
+
+  if (!allowedSexValues.has(sex)) {
+    redirectEditWithError(petId, "sex");
+  }
+
+  const weight = weightValue ? Number(weightValue) : null;
+
+  if (
+    weightValue &&
+    (weight === null || !Number.isFinite(weight) || weight < 0)
+  ) {
+    redirectEditWithError(petId, "weight");
+  }
+
+  const { error } = await supabase
+    .from("pets")
+    .update({
+      name,
+      species,
+      sex,
+      breed: getOptionalString(formData, "breed"),
+      birth_date: getOptionalString(formData, "birth_date"),
+      weight,
+      allergies: getOptionalString(formData, "allergies"),
+      current_food: getOptionalString(formData, "current_food"),
+      care_notes: getOptionalString(formData, "care_notes"),
+    })
+    .eq("id", petId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Failed to update customer pet", error);
+    redirectEditWithError(petId, "save");
+  }
+
+  redirect(`/mi-cuenta/mascotas/${petId}`);
 }
