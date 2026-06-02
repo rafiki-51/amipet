@@ -122,51 +122,20 @@ export default async function MiCuentaPage() {
           <aside className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-xl font-bold tracking-tight">Mis mascotas</h2>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              Este espacio quedara listo para registrar mascotas y consultar su
-              informacion principal.
+              Consulta y administra los perfiles de tus mascotas desde un solo
+              lugar.
             </p>
             <Link
               href="/mi-cuenta/mascotas"
               className="mt-6 inline-flex w-full justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
             >
-              Ver mis mascotas
+              Ir a mis mascotas
             </Link>
             <p className="mt-3 text-xs leading-5 text-slate-500">
-              Proximamente: perfiles, citas y recordatorios por mascota.
+              Cada mascota tendra su propio expediente digital cuando el modulo
+              este disponible.
             </p>
           </aside>
-        </section>
-
-        <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h2 className="text-xl font-bold tracking-tight">
-                Expediente digital
-              </h2>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-                Base preparada para centralizar historial medico, vacunas,
-                notas veterinarias y documentos de cada mascota cuando se
-                implemente el modulo.
-              </p>
-            </div>
-            <span className="inline-flex rounded-full bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800">
-              En preparacion
-            </span>
-          </div>
-
-          <div className="mt-6 grid gap-4 md:grid-cols-4">
-            {["Historial", "Vacunas", "Citas", "Documentos"].map((item) => (
-              <div
-                key={item}
-                className="rounded-xl border border-slate-100 bg-slate-50 p-4"
-              >
-                <p className="font-semibold text-slate-900">{item}</p>
-                <p className="mt-2 text-sm leading-5 text-slate-500">
-                  Pendiente de integrar.
-                </p>
-              </div>
-            ))}
-          </div>
         </section>
       </div>
     </main>
