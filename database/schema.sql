@@ -97,6 +97,7 @@ create table public.pets (
   user_id uuid not null references auth.users(id) on delete cascade,
   name text not null,
   species text not null,
+  sex text not null default 'unknown' check (sex in ('male', 'female', 'unknown')),
   breed text,
   birth_date date,
   weight numeric,
