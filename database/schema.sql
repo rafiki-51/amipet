@@ -94,15 +94,20 @@ for each row execute function public.set_updated_at();
 -- Pets
 create table public.pets (
   id uuid primary key default gen_random_uuid(),
-  customer_id uuid not null references public.customers(id) on delete cascade,
-  name text,
-  pet_type text not null check (pet_type in ('perro', 'gato')),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  name text not null,
+  species text not null,
+  breed text,
+  birth_date date,
+  weight numeric,
+  allergies text,
+  current_food text,
+  care_notes text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
-create index pets_customer_id_idx on public.pets (customer_id);
-create index pets_pet_type_idx on public.pets (pet_type);
+create index pets_user_id_idx on public.pets (user_id);
 
 create trigger set_pets_updated_at
 before update on public.pets
@@ -321,7 +326,7 @@ for select
 to anon, authenticated
 using (is_active = true);
 
--- Customers, addresses, pets, orders, order_items and order_status_history:
+-- Customers, addresses, orders, order_items and order_status_history:
 -- no public policies for MVP.
 -- With RLS enabled and no policies, direct client access is denied.
 -- Access should happen later through server-side API routes using service role
@@ -331,6 +336,35 @@ grant select, insert, update, delete on public.addresses to service_role;
 grant select, insert, update, delete on public.orders to service_role;
 grant select, insert, update, delete on public.order_items to service_role;
 grant select, insert, update, delete on public.order_status_history to service_role;
+
+-- Pets: authenticated users can manage only their own pets.
+grant select, insert, update, delete on public.pets to authenticated;
+grant select, insert, update, delete on public.pets to service_role;
+
+create policy "Users can read own pets"
+on public.pets
+for select
+to authenticated
+using (auth.uid() = user_id);
+
+create policy "Users can insert own pets"
+on public.pets
+for insert
+to authenticated
+with check (auth.uid() = user_id);
+
+create policy "Users can update own pets"
+on public.pets
+for update
+to authenticated
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+create policy "Users can delete own pets"
+on public.pets
+for delete
+to authenticated
+using (auth.uid() = user_id);
 
 -- Profiles: users can read only their own profile.
 grant select on public.profiles to authenticated;
