@@ -183,3 +183,44 @@ export async function updatePet(petId: string, formData: FormData) {
 
   redirect(`/mi-cuenta/mascotas/${petId}`);
 }
+
+export async function archivePet(petId: string, formData: FormData) {
+  const { supabase, user, profileError } = await requireCustomerUser(
+    `/mi-cuenta/mascotas/${petId}`,
+  );
+
+  if (profileError) {
+    redirect("/mi-cuenta/mascotas");
+  }
+
+  const { data: existingPet, error: existingPetError } = await supabase
+    .from("pets")
+    .select("id")
+    .eq("id", petId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (existingPetError) {
+    console.error("Failed to validate customer pet ownership", existingPetError);
+    redirect("/mi-cuenta/mascotas");
+  }
+
+  if (!existingPet) {
+    redirect("/mi-cuenta/mascotas");
+  }
+
+  const { error } = await supabase
+    .from("pets")
+    .update({
+      archived_at: new Date().toISOString(),
+      archived_reason: getOptionalString(formData, "archived_reason"),
+    })
+    .eq("id", petId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Failed to archive customer pet", error);
+  }
+
+  redirect("/mi-cuenta/mascotas");
+}

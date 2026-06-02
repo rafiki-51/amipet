@@ -104,6 +104,8 @@ create table public.pets (
   allergies text,
   current_food text,
   care_notes text,
+  archived_at timestamptz,
+  archived_reason text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

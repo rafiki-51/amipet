@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { archivePet } from "@/actions/pets";
 import { createClient } from "@/lib/supabase/server";
 
 const adminRoles = new Set(["admin", "operator"]);
@@ -15,6 +16,7 @@ type Pet = {
   allergies: string | null;
   current_food: string | null;
   care_notes: string | null;
+  archived_at: string | null;
 };
 
 type MascotaDetallePageProps = {
@@ -91,7 +93,7 @@ export default async function MascotaDetallePage({
   const { data: pet, error: petError } = await supabase
     .from("pets")
     .select(
-      "id, name, species, sex, breed, birth_date, weight, allergies, current_food, care_notes",
+      "id, name, species, sex, breed, birth_date, weight, allergies, current_food, care_notes, archived_at",
     )
     .eq("id", id)
     .eq("user_id", user.id)
@@ -104,6 +106,9 @@ export default async function MascotaDetallePage({
   if (!pet || petError) {
     redirect("/mi-cuenta/mascotas");
   }
+
+  const archivePetWithId = archivePet.bind(null, pet.id);
+  const isArchived = Boolean(pet.archived_at);
 
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
@@ -132,15 +137,34 @@ export default async function MascotaDetallePage({
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:items-end">
-              <span className="inline-flex rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800">
-                {displayValue(pet.species)}
-              </span>
-              <Link
-                href={`/mi-cuenta/mascotas/${pet.id}/editar`}
-                className="inline-flex justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-100"
-              >
-                Editar mascota
-              </Link>
+              <div className="flex flex-wrap gap-2 sm:justify-end">
+                <span className="inline-flex rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800">
+                  {displayValue(pet.species)}
+                </span>
+                {isArchived ? (
+                  <span className="inline-flex rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">
+                    Archivada
+                  </span>
+                ) : null}
+              </div>
+              {!isArchived ? (
+                <div className="flex flex-col gap-2 sm:items-end">
+                  <Link
+                    href={`/mi-cuenta/mascotas/${pet.id}/editar`}
+                    className="inline-flex justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-100"
+                  >
+                    Editar mascota
+                  </Link>
+                  <form action={archivePetWithId}>
+                    <button
+                      type="submit"
+                      className="inline-flex justify-center rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-100"
+                    >
+                      Archivar mascota
+                    </button>
+                  </form>
+                </div>
+              ) : null}
             </div>
           </div>
         </header>

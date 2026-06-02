@@ -12,6 +12,13 @@ type Pet = {
   birth_date: string | null;
   weight: number | null;
   current_food: string | null;
+  archived_at: string | null;
+};
+
+type MascotasPageProps = {
+  searchParams?: Promise<{
+    estado?: string;
+  }>;
 };
 
 function displayValue(value: string | number | null | undefined) {
@@ -34,7 +41,9 @@ function formatBirthDate(value: string | null) {
   }).format(new Date(value));
 }
 
-export default async function MascotasPage() {
+export default async function MascotasPage({ searchParams }: MascotasPageProps) {
+  const resolvedSearchParams = await searchParams;
+  const isArchivedView = resolvedSearchParams?.estado === "archivadas";
   const supabase = await createClient();
   const {
     data: { user },
@@ -62,12 +71,22 @@ export default async function MascotasPage() {
     redirect("/login");
   }
 
-  const { data: pets, error: petsError } = await supabase
+  const petsQuery = supabase
     .from("pets")
-    .select("id, name, species, breed, birth_date, weight, current_food")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .returns<Pet[]>();
+    .select(
+      "id, name, species, breed, birth_date, weight, current_food, archived_at",
+    )
+    .eq("user_id", user.id);
+
+  const { data: pets, error: petsError } = isArchivedView
+    ? await petsQuery
+        .not("archived_at", "is", null)
+        .order("created_at", { ascending: false })
+        .returns<Pet[]>()
+    : await petsQuery
+        .is("archived_at", null)
+        .order("created_at", { ascending: false })
+        .returns<Pet[]>();
 
   if (petsError) {
     console.error("Failed to load customer pets", petsError);
@@ -93,37 +112,66 @@ export default async function MascotasPage() {
               Mi cuenta
             </p>
             <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
-              Mis mascotas
+              {isArchivedView ? "Mascotas archivadas" : "Mis mascotas"}
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              Administra los perfiles de tus mascotas y prepara su expediente
-              digital.
+              {isArchivedView
+                ? "Consulta perfiles archivados y conserva su informacion historica."
+                : "Administra los perfiles de tus mascotas y prepara su expediente digital."}
             </p>
           </div>
-          <Link
-            href="/mi-cuenta/mascotas/nueva"
-            className="inline-flex justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
-          >
-            Agregar mascota
-          </Link>
+          <div className="flex flex-col gap-3 sm:items-end">
+            {!isArchivedView ? (
+              <Link
+                href="/mi-cuenta/mascotas/nueva"
+                className="inline-flex justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
+              >
+                Agregar mascota
+              </Link>
+            ) : null}
+            <Link
+              href={
+                isArchivedView
+                  ? "/mi-cuenta/mascotas"
+                  : "/mi-cuenta/mascotas?estado=archivadas"
+              }
+              className="inline-flex justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-100"
+            >
+              {isArchivedView
+                ? "Ver mascotas activas"
+                : "Ver mascotas archivadas"}
+            </Link>
+          </div>
         </header>
 
         <section className="mt-8">
           {!hasPets ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center shadow-sm">
               <h2 className="text-xl font-bold tracking-tight">
-                Aun no has registrado mascotas.
+                {isArchivedView
+                  ? "No tienes mascotas archivadas."
+                  : "Aun no has registrado mascotas."}
               </h2>
               <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-600">
-                Agrega tu primera mascota para tener su informacion basica
-                lista cuando el modulo este disponible.
+                {isArchivedView
+                  ? "Cuando archives una mascota, podras consultarla desde esta vista."
+                  : "Agrega tu primera mascota para tener su informacion basica lista cuando el modulo este disponible."}
               </p>
-              <Link
-                href="/mi-cuenta/mascotas/nueva"
-                className="mt-6 inline-flex justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
-              >
-                Agregar mascota
-              </Link>
+              {isArchivedView ? (
+                <Link
+                  href="/mi-cuenta/mascotas"
+                  className="mt-6 inline-flex justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-100"
+                >
+                  Ver mascotas activas
+                </Link>
+              ) : (
+                <Link
+                  href="/mi-cuenta/mascotas/nueva"
+                  className="mt-6 inline-flex justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                >
+                  Agregar mascota
+                </Link>
+              )}
             </div>
           ) : (
             <div className="grid gap-5 md:grid-cols-2">
@@ -142,9 +190,16 @@ export default async function MascotasPage() {
                         {displayValue(pet.name)}
                       </h2>
                     </div>
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-                      Perfil
-                    </span>
+                    <div className="flex flex-col gap-2 sm:items-end">
+                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                        Perfil
+                      </span>
+                      {pet.archived_at ? (
+                        <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
+                          Archivada
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
 
                   <dl className="mt-5 grid gap-3 text-sm">
