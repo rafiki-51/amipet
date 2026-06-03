@@ -19,6 +19,13 @@ type Pet = {
   archived_at: string | null;
 };
 
+type WeightLogSummary = {
+  id: string;
+  weight: number | string;
+  measured_at: string;
+  created_at: string;
+};
+
 type MascotaDetallePageProps = {
   params: Promise<{
     id: string;
@@ -37,6 +44,35 @@ function displayValue(value: string | number | null | undefined) {
   }
 
   return value?.trim() || "Pendiente";
+}
+
+function formatWeight(value: number | string | null | undefined) {
+  if (typeof value === "number") {
+    return `${value} kg`;
+  }
+
+  return value?.trim() ? `${value} kg` : "Pendiente";
+}
+
+function formatDate(value: string | null | undefined) {
+  if (!value) {
+    return "Pendiente";
+  }
+
+  const dateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  const date = dateOnlyMatch
+    ? new Date(
+        Number(dateOnlyMatch[1]),
+        Number(dateOnlyMatch[2]) - 1,
+        Number(dateOnlyMatch[3]),
+      )
+    : new Date(value);
+
+  return new Intl.DateTimeFormat("es-CR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  }).format(date);
 }
 
 function formatBirthDate(value: string | null) {
@@ -109,6 +145,26 @@ export default async function MascotaDetallePage({
 
   const archivePetWithId = archivePet.bind(null, pet.id);
   const isArchived = Boolean(pet.archived_at);
+  const {
+    data: latestWeightLogs,
+    count: weightLogsCount,
+    error: weightLogsError,
+  } = await supabase
+    .from("pet_weight_logs")
+    .select("id, weight, measured_at, created_at", { count: "exact" })
+    .eq("pet_id", pet.id)
+    .eq("user_id", user.id)
+    .order("measured_at", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .returns<WeightLogSummary[]>();
+
+  if (weightLogsError) {
+    console.error("Failed to load customer pet weight summary", weightLogsError);
+  }
+
+  const latestWeightLog = weightLogsError ? null : latestWeightLogs?.[0];
+  const totalWeightLogs = weightLogsError ? 0 : weightLogsCount ?? 0;
 
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
@@ -266,33 +322,101 @@ export default async function MascotaDetallePage({
                 Expediente digital
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-                Este expediente pertenecera a esta mascota y reunira su
-                informacion veterinaria cuando los modulos esten disponibles.
+                Consulta el seguimiento historico de salud y cuidado de esta
+                mascota.
               </p>
+              {isArchived ? (
+                <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-800">
+                  Esta mascota esta archivada. El expediente queda disponible
+                  solo para consulta.
+                </p>
+              ) : null}
             </div>
-            <span className="inline-flex rounded-full bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800">
-              Proximamente
+            <span className="inline-flex rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800">
+              Disponible
             </span>
           </div>
 
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            {[
-              "Vacunas",
-              "Historial medico",
-              "Medicamentos",
-              "Documentos",
-              "Recordatorios",
-            ].map((item) => (
-              <div
-                key={item}
-                className="rounded-xl border border-slate-100 bg-slate-50 p-4"
-              >
-                <p className="font-semibold text-slate-900">{item}</p>
-                <p className="mt-2 text-sm leading-5 text-slate-500">
-                  Proximamente
-                </p>
+          <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_280px]">
+            <article className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-lg font-bold tracking-tight text-slate-950">
+                    Peso historico
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    {totalWeightLogs > 0
+                      ? "Consulta las mediciones registradas para el seguimiento de peso."
+                      : isArchived
+                        ? "No hay registros de peso para consultar."
+                        : "Aun no hay registros de peso. Ingresa al historial para agregar el primero."}
+                  </p>
+                </div>
+                <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 sm:self-start">
+                  Peso
+                </span>
               </div>
-            ))}
+
+              <dl className="mt-5 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-xl bg-white p-4">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Ultimo peso
+                  </dt>
+                  <dd className="mt-2 text-base font-semibold text-slate-950">
+                    {latestWeightLog
+                      ? formatWeight(latestWeightLog.weight)
+                      : "Pendiente"}
+                  </dd>
+                </div>
+                <div className="rounded-xl bg-white p-4">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Ultima medicion
+                  </dt>
+                  <dd className="mt-2 text-base font-semibold text-slate-950">
+                    {latestWeightLog
+                      ? formatDate(latestWeightLog.measured_at)
+                      : "Pendiente"}
+                  </dd>
+                </div>
+                <div className="rounded-xl bg-white p-4">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Total registros
+                  </dt>
+                  <dd className="mt-2 text-base font-semibold text-slate-950">
+                    {totalWeightLogs}
+                  </dd>
+                </div>
+              </dl>
+
+              <Link
+                href={`/mi-cuenta/mascotas/${pet.id}/peso`}
+                className="mt-5 inline-flex justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
+              >
+                Ver historial de peso
+              </Link>
+            </article>
+
+            <aside className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+              <p className="font-semibold text-slate-900">Proximos modulos</p>
+              <div className="mt-4 grid gap-3">
+                {[
+                  "Vacunas",
+                  "Historial medico",
+                  "Medicamentos",
+                  "Documentos",
+                  "Recordatorios",
+                ].map((item) => (
+                  <div key={item} className="rounded-xl bg-white p-3">
+                    <p className="text-sm font-semibold text-slate-900">
+                      {item}
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                      Proximamente
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </aside>
           </div>
         </section>
       </div>
