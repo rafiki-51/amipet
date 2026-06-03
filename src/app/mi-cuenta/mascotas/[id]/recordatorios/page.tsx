@@ -29,6 +29,16 @@ type RecordatoriosPageProps = {
   params: Promise<{
     id: string;
   }>;
+  searchParams?: Promise<{
+    error?: string;
+  }>;
+};
+
+const errorMessages: Record<string, string> = {
+  delete: "No pudimos eliminar el recordatorio. Intentalo nuevamente.",
+  complete: "No pudimos completar el recordatorio. Intentalo nuevamente.",
+  reopen: "No pudimos reabrir el recordatorio. Intentalo nuevamente.",
+  archived: "Esta mascota esta archivada y solo permite consulta.",
 };
 
 const reminderTypeLabels: Record<string, string> = {
@@ -103,11 +113,15 @@ function isOverdue(reminder: Reminder, today: string) {
 }
 
 function ReminderCard({
+  petId,
   reminder,
   today,
+  canEdit,
 }: {
+  petId: string;
   reminder: Reminder;
   today: string;
+  canEdit: boolean;
 }) {
   const overdue = isOverdue(reminder, today);
 
@@ -181,12 +195,24 @@ function ReminderCard({
       <p className="mt-4 text-xs leading-5 text-slate-500">
         Creado: {formatDate(reminder.created_at)}
       </p>
+
+      {canEdit ? (
+        <div className="mt-4 flex justify-end">
+          <Link
+            href={`/mi-cuenta/mascotas/${petId}/recordatorios/${reminder.id}/editar`}
+            className="text-sm font-semibold text-emerald-700 hover:text-emerald-800"
+          >
+            Editar
+          </Link>
+        </div>
+      ) : null}
     </article>
   );
 }
 
 export default async function RecordatoriosPage({
   params,
+  searchParams,
 }: RecordatoriosPageProps) {
   const { id } = await params;
   const supabase = await createClient();
@@ -263,6 +289,10 @@ export default async function RecordatoriosPage({
   const completedCount = reminders.filter(
     (reminder) => reminder.status === "completed",
   ).length;
+  const resolvedSearchParams = await searchParams;
+  const errorMessage = resolvedSearchParams?.error
+    ? errorMessages[resolvedSearchParams.error]
+    : null;
 
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
@@ -345,6 +375,12 @@ export default async function RecordatoriosPage({
           </div>
         </section>
 
+        {errorMessage ? (
+          <p className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {errorMessage}
+          </p>
+        ) : null}
+
         <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -381,8 +417,10 @@ export default async function RecordatoriosPage({
               {pendingReminders.map((reminder) => (
                 <ReminderCard
                   key={reminder.id}
+                  petId={pet.id}
                   reminder={reminder}
                   today={today}
+                  canEdit={!isArchived}
                 />
               ))}
             </div>
@@ -411,8 +449,10 @@ export default async function RecordatoriosPage({
                 {completedOrCanceledReminders.map((reminder) => (
                   <ReminderCard
                     key={reminder.id}
+                    petId={pet.id}
                     reminder={reminder}
                     today={today}
+                    canEdit={!isArchived}
                   />
                 ))}
               </div>
