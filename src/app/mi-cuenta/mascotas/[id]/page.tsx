@@ -39,6 +39,12 @@ type NextVaccinationDue = {
   next_due_at: string;
 };
 
+type ReminderSummary = {
+  id: string;
+  title: string;
+  due_at: string;
+};
+
 type MascotaDetallePageProps = {
   params: Promise<{
     id: string;
@@ -167,6 +173,7 @@ export default async function MascotaDetallePage({
 
   const archivePetWithId = archivePet.bind(null, pet.id);
   const isArchived = Boolean(pet.archived_at);
+  const today = getTodayInputValue();
   const {
     data: latestWeightLogs,
     count: weightLogsCount,
@@ -212,7 +219,7 @@ export default async function MascotaDetallePage({
       .eq("pet_id", pet.id)
       .eq("user_id", user.id)
       .not("next_due_at", "is", null)
-      .gte("next_due_at", getTodayInputValue())
+      .gte("next_due_at", today)
       .order("next_due_at", { ascending: true })
       .limit(1)
       .returns<NextVaccinationDue[]>();
@@ -229,6 +236,104 @@ export default async function MascotaDetallePage({
   const nextVaccinationDue = nextVaccinationDueError
     ? null
     : nextVaccinationsDue?.[0];
+  const { data: nextReminders, error: nextReminderError } = await supabase
+    .from("pet_reminders")
+    .select("id, title, due_at")
+    .eq("pet_id", pet.id)
+    .eq("user_id", user.id)
+    .eq("status", "pending")
+    .gte("due_at", today)
+    .order("due_at", { ascending: true })
+    .limit(1)
+    .returns<ReminderSummary[]>();
+
+  if (nextReminderError) {
+    console.error(
+      "Failed to load customer pet next reminder",
+      nextReminderError,
+    );
+  }
+
+  const {
+    count: remindersCount,
+    error: remindersCountError,
+  } = await supabase
+    .from("pet_reminders")
+    .select("id", { count: "exact", head: true })
+    .eq("pet_id", pet.id)
+    .eq("user_id", user.id);
+
+  if (remindersCountError) {
+    console.error(
+      "Failed to load customer pet reminders count",
+      remindersCountError,
+    );
+  }
+
+  const {
+    count: pendingRemindersCount,
+    error: pendingRemindersCountError,
+  } = await supabase
+    .from("pet_reminders")
+    .select("id", { count: "exact", head: true })
+    .eq("pet_id", pet.id)
+    .eq("user_id", user.id)
+    .eq("status", "pending")
+    .gte("due_at", today);
+
+  if (pendingRemindersCountError) {
+    console.error(
+      "Failed to load customer pet pending reminders count",
+      pendingRemindersCountError,
+    );
+  }
+
+  const {
+    count: overdueRemindersCount,
+    error: overdueRemindersCountError,
+  } = await supabase
+    .from("pet_reminders")
+    .select("id", { count: "exact", head: true })
+    .eq("pet_id", pet.id)
+    .eq("user_id", user.id)
+    .eq("status", "pending")
+    .lt("due_at", today);
+
+  if (overdueRemindersCountError) {
+    console.error(
+      "Failed to load customer pet overdue reminders count",
+      overdueRemindersCountError,
+    );
+  }
+
+  const {
+    count: completedRemindersCount,
+    error: completedRemindersCountError,
+  } = await supabase
+    .from("pet_reminders")
+    .select("id", { count: "exact", head: true })
+    .eq("pet_id", pet.id)
+    .eq("user_id", user.id)
+    .eq("status", "completed");
+
+  if (completedRemindersCountError) {
+    console.error(
+      "Failed to load customer pet completed reminders count",
+      completedRemindersCountError,
+    );
+  }
+
+  const nextReminder = nextReminderError ? null : nextReminders?.[0];
+  const totalReminders = remindersCountError ? 0 : remindersCount ?? 0;
+  const pendingReminders = pendingRemindersCountError
+    ? 0
+    : pendingRemindersCount ?? 0;
+  const overdueReminders = overdueRemindersCountError
+    ? 0
+    : overdueRemindersCount ?? 0;
+  const completedReminders = completedRemindersCountError
+    ? 0
+    : completedRemindersCount ?? 0;
 
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
@@ -401,7 +506,7 @@ export default async function MascotaDetallePage({
             </span>
           </div>
 
-          <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          <div className="mt-6 grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
             <article className="rounded-xl border border-slate-100 bg-slate-50 p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
@@ -532,6 +637,86 @@ export default async function MascotaDetallePage({
                 Ver vacunas
               </Link>
             </article>
+
+            <article className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-lg font-bold tracking-tight text-slate-950">
+                    Recordatorios
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    {totalReminders > 0
+                      ? "Consulta los recordatorios pendientes, vencidos y completados."
+                      : isArchived
+                        ? "No hay recordatorios registrados para consultar."
+                        : "Aun no hay recordatorios registrados. Ingresa al modulo para agregar el primero."}
+                  </p>
+                </div>
+                <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 sm:self-start">
+                  Disponible
+                </span>
+              </div>
+
+              <dl className="mt-5 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl bg-white p-4">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Proximo recordatorio
+                  </dt>
+                  <dd className="mt-2 text-base font-semibold text-slate-950">
+                    {nextReminder
+                      ? displayValue(nextReminder.title)
+                      : "Pendiente"}
+                  </dd>
+                </div>
+                <div className="rounded-xl bg-white p-4">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Fecha proxima
+                  </dt>
+                  <dd className="mt-2 text-base font-semibold text-slate-950">
+                    {nextReminder ? formatDate(nextReminder.due_at) : "Pendiente"}
+                  </dd>
+                </div>
+                <div className="rounded-xl bg-white p-4">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Pendientes
+                  </dt>
+                  <dd className="mt-2 text-base font-semibold text-slate-950">
+                    {pendingReminders}
+                  </dd>
+                </div>
+                <div className="rounded-xl bg-white p-4">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Vencidos
+                  </dt>
+                  <dd className="mt-2 text-base font-semibold text-slate-950">
+                    {overdueReminders}
+                  </dd>
+                </div>
+                <div className="rounded-xl bg-white p-4">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Completados
+                  </dt>
+                  <dd className="mt-2 text-base font-semibold text-slate-950">
+                    {completedReminders}
+                  </dd>
+                </div>
+                <div className="rounded-xl bg-white p-4">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Total registros
+                  </dt>
+                  <dd className="mt-2 text-base font-semibold text-slate-950">
+                    {totalReminders}
+                  </dd>
+                </div>
+              </dl>
+
+              <Link
+                href={`/mi-cuenta/mascotas/${pet.id}/recordatorios`}
+                className="mt-5 inline-flex justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
+              >
+                Ver recordatorios
+              </Link>
+            </article>
           </div>
 
           <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50 p-4">
@@ -541,7 +726,6 @@ export default async function MascotaDetallePage({
                 "Historial medico",
                 "Medicamentos",
                 "Documentos",
-                "Recordatorios",
               ].map((item) => (
                 <div key={item} className="rounded-xl bg-white p-3">
                   <p className="text-sm font-semibold text-slate-900">
