@@ -246,6 +246,14 @@ export default async function PesoPage({ params }: PesoPageProps) {
                     <div className="text-sm leading-6 text-slate-500 sm:text-right">
                       <p>Creado: {formatDate(log.created_at)}</p>
                       <p>Actualizado: {formatDate(log.updated_at)}</p>
+                      {!isArchived ? (
+                        <Link
+                          href={`/mi-cuenta/mascotas/${pet.id}/peso/${log.id}/editar`}
+                          className="mt-2 inline-flex font-semibold text-emerald-700 hover:text-emerald-800"
+                        >
+                          Editar
+                        </Link>
+                      ) : null}
                     </div>
                   </div>
                   {log.notes ? (
