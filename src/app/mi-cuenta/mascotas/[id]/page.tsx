@@ -26,6 +26,19 @@ type WeightLogSummary = {
   created_at: string;
 };
 
+type VaccinationSummary = {
+  id: string;
+  vaccine_name: string;
+  administered_at: string;
+  created_at: string;
+};
+
+type NextVaccinationDue = {
+  id: string;
+  vaccine_name: string;
+  next_due_at: string;
+};
+
 type MascotaDetallePageProps = {
   params: Promise<{
     id: string;
@@ -73,6 +86,15 @@ function formatDate(value: string | null | undefined) {
     month: "long",
     year: "numeric",
   }).format(date);
+}
+
+function getTodayInputValue() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 function formatBirthDate(value: string | null) {
@@ -165,6 +187,48 @@ export default async function MascotaDetallePage({
 
   const latestWeightLog = weightLogsError ? null : latestWeightLogs?.[0];
   const totalWeightLogs = weightLogsError ? 0 : weightLogsCount ?? 0;
+  const {
+    data: latestVaccinations,
+    count: vaccinationsCount,
+    error: vaccinationsError,
+  } = await supabase
+    .from("pet_vaccinations")
+    .select("id, vaccine_name, administered_at, created_at", { count: "exact" })
+    .eq("pet_id", pet.id)
+    .eq("user_id", user.id)
+    .order("administered_at", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .returns<VaccinationSummary[]>();
+
+  if (vaccinationsError) {
+    console.error("Failed to load customer pet vaccination summary", vaccinationsError);
+  }
+
+  const { data: nextVaccinationsDue, error: nextVaccinationDueError } =
+    await supabase
+      .from("pet_vaccinations")
+      .select("id, vaccine_name, next_due_at")
+      .eq("pet_id", pet.id)
+      .eq("user_id", user.id)
+      .not("next_due_at", "is", null)
+      .gte("next_due_at", getTodayInputValue())
+      .order("next_due_at", { ascending: true })
+      .limit(1)
+      .returns<NextVaccinationDue[]>();
+
+  if (nextVaccinationDueError) {
+    console.error(
+      "Failed to load customer pet next vaccination due",
+      nextVaccinationDueError,
+    );
+  }
+
+  const latestVaccination = vaccinationsError ? null : latestVaccinations?.[0];
+  const totalVaccinations = vaccinationsError ? 0 : vaccinationsCount ?? 0;
+  const nextVaccinationDue = nextVaccinationDueError
+    ? null
+    : nextVaccinationsDue?.[0];
 
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
@@ -337,7 +401,7 @@ export default async function MascotaDetallePage({
             </span>
           </div>
 
-          <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_280px]">
+          <div className="mt-6 grid gap-4 lg:grid-cols-2">
             <article className="rounded-xl border border-slate-100 bg-slate-50 p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
@@ -396,28 +460,101 @@ export default async function MascotaDetallePage({
               </Link>
             </article>
 
-            <aside className="rounded-xl border border-slate-100 bg-slate-50 p-4">
-              <p className="font-semibold text-slate-900">Proximos modulos</p>
-              <div className="mt-4 grid gap-3">
-                {[
-                  "Vacunas",
-                  "Historial medico",
-                  "Medicamentos",
-                  "Documentos",
-                  "Recordatorios",
-                ].map((item) => (
-                  <div key={item} className="rounded-xl bg-white p-3">
-                    <p className="text-sm font-semibold text-slate-900">
-                      {item}
-                    </p>
-                    <p className="mt-1 text-xs leading-5 text-slate-500">
-                      Proximamente
-                    </p>
-                  </div>
-                ))}
+            <article className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-lg font-bold tracking-tight text-slate-950">
+                    Vacunas
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    {totalVaccinations > 0
+                      ? "Consulta las vacunas registradas y proximas dosis."
+                      : isArchived
+                        ? "No hay vacunas registradas para consultar."
+                        : "Aun no hay vacunas registradas. Ingresa al modulo para agregar la primera."}
+                  </p>
+                </div>
+                <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 sm:self-start">
+                  Vacunas
+                </span>
               </div>
-            </aside>
+
+              <dl className="mt-5 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl bg-white p-4">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Ultima vacuna
+                  </dt>
+                  <dd className="mt-2 text-base font-semibold text-slate-950">
+                    {latestVaccination
+                      ? displayValue(latestVaccination.vaccine_name)
+                      : "Pendiente"}
+                  </dd>
+                </div>
+                <div className="rounded-xl bg-white p-4">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Ultima aplicacion
+                  </dt>
+                  <dd className="mt-2 text-base font-semibold text-slate-950">
+                    {latestVaccination
+                      ? formatDate(latestVaccination.administered_at)
+                      : "Pendiente"}
+                  </dd>
+                </div>
+                <div className="rounded-xl bg-white p-4">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Proxima dosis
+                  </dt>
+                  <dd className="mt-2 text-base font-semibold text-slate-950">
+                    {nextVaccinationDue
+                      ? formatDate(nextVaccinationDue.next_due_at)
+                      : "Pendiente"}
+                  </dd>
+                  {nextVaccinationDue ? (
+                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                      {displayValue(nextVaccinationDue.vaccine_name)}
+                    </p>
+                  ) : null}
+                </div>
+                <div className="rounded-xl bg-white p-4">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Total registros
+                  </dt>
+                  <dd className="mt-2 text-base font-semibold text-slate-950">
+                    {totalVaccinations}
+                  </dd>
+                </div>
+              </dl>
+
+              <Link
+                href={`/mi-cuenta/mascotas/${pet.id}/vacunas`}
+                className="mt-5 inline-flex justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
+              >
+                Ver vacunas
+              </Link>
+            </article>
           </div>
+
+          <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50 p-4">
+            <p className="font-semibold text-slate-900">Proximos modulos</p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                "Historial medico",
+                "Medicamentos",
+                "Documentos",
+                "Recordatorios",
+              ].map((item) => (
+                <div key={item} className="rounded-xl bg-white p-3">
+                  <p className="text-sm font-semibold text-slate-900">
+                    {item}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    Proximamente
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
         </section>
       </div>
     </main>
