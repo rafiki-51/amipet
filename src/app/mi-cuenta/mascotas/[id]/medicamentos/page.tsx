@@ -31,6 +31,17 @@ type MedicamentosPageProps = {
   params: Promise<{
     id: string;
   }>;
+  searchParams?: Promise<{
+    error?: string;
+  }>;
+};
+
+const errorMessages: Record<string, string> = {
+  delete: "No pudimos eliminar el medicamento. Intentalo nuevamente.",
+  complete: "No pudimos completar el medicamento. Intentalo nuevamente.",
+  pause: "No pudimos pausar el medicamento. Intentalo nuevamente.",
+  reopen: "No pudimos reabrir el medicamento. Intentalo nuevamente.",
+  archived: "Esta mascota esta archivada y solo permite consulta.",
 };
 
 const medicationTypeLabels: Record<string, string> = {
@@ -82,7 +93,15 @@ function formatStatus(value: string) {
   return statusLabels[value] || "No indicado";
 }
 
-function MedicationCard({ medication }: { medication: Medication }) {
+function MedicationCard({
+  petId,
+  medication,
+  canEdit,
+}: {
+  petId: string;
+  medication: Medication;
+  canEdit: boolean;
+}) {
   return (
     <article className="rounded-xl border border-slate-100 bg-slate-50 p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -159,15 +178,27 @@ function MedicationCard({ medication }: { medication: Medication }) {
       ) : null}
 
       <p className="mt-4 text-xs leading-5 text-slate-500">
-        Creado: {formatDate(medication.created_at)} · Actualizado:{" "}
+        Creado: {formatDate(medication.created_at)} - Actualizado:{" "}
         {formatDate(medication.updated_at)}
       </p>
+
+      {canEdit ? (
+        <div className="mt-4 flex justify-end">
+          <Link
+            href={`/mi-cuenta/mascotas/${petId}/medicamentos/${medication.id}/editar`}
+            className="text-sm font-semibold text-emerald-700 hover:text-emerald-800"
+          >
+            Editar
+          </Link>
+        </div>
+      ) : null}
     </article>
   );
 }
 
 export default async function MedicamentosPage({
   params,
+  searchParams,
 }: MedicamentosPageProps) {
   const { id } = await params;
   const supabase = await createClient();
@@ -247,6 +278,10 @@ export default async function MedicamentosPage({
     (medication) => medication.status === "paused",
   ).length;
   const totalCount = medications.length;
+  const resolvedSearchParams = await searchParams;
+  const errorMessage = resolvedSearchParams?.error
+    ? errorMessages[resolvedSearchParams.error]
+    : null;
 
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
@@ -337,6 +372,12 @@ export default async function MedicamentosPage({
           </div>
         </section>
 
+        {errorMessage ? (
+          <p className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {errorMessage}
+          </p>
+        ) : null}
+
         <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -371,7 +412,12 @@ export default async function MedicamentosPage({
           ) : (
             <div className="mt-6 grid gap-4">
               {activeMedications.map((medication) => (
-                <MedicationCard key={medication.id} medication={medication} />
+                <MedicationCard
+                  key={medication.id}
+                  petId={pet.id}
+                  medication={medication}
+                  canEdit={!isArchived}
+                />
               ))}
             </div>
           )}
@@ -395,7 +441,12 @@ export default async function MedicamentosPage({
             ) : (
               <div className="mt-6 grid gap-4">
                 {historyMedications.map((medication) => (
-                  <MedicationCard key={medication.id} medication={medication} />
+                  <MedicationCard
+                    key={medication.id}
+                    petId={pet.id}
+                    medication={medication}
+                    canEdit={!isArchived}
+                  />
                 ))}
               </div>
             )}
