@@ -30,6 +30,14 @@ type HistorialMedicoPageProps = {
   params: Promise<{
     id: string;
   }>;
+  searchParams?: Promise<{
+    error?: string;
+  }>;
+};
+
+const errorMessages: Record<string, string> = {
+  delete: "No pudimos eliminar el evento medico. Intentalo nuevamente.",
+  archived: "Esta mascota esta archivada y solo permite consulta.",
 };
 
 const recordTypeLabels: Record<string, string> = {
@@ -75,7 +83,15 @@ function formatRecordType(value: string) {
   return recordTypeLabels[value] || "Otro";
 }
 
-function MedicalRecordCard({ record }: { record: MedicalRecord }) {
+function MedicalRecordCard({
+  petId,
+  record,
+  canEdit,
+}: {
+  petId: string;
+  record: MedicalRecord;
+  canEdit: boolean;
+}) {
   return (
     <article className="rounded-xl border border-slate-100 bg-slate-50 p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -165,12 +181,24 @@ function MedicalRecordCard({ record }: { record: MedicalRecord }) {
         Creado: {formatDate(record.created_at)} - Actualizado:{" "}
         {formatDate(record.updated_at)}
       </p>
+
+      {canEdit ? (
+        <div className="mt-4 flex justify-end">
+          <Link
+            href={`/mi-cuenta/mascotas/${petId}/historial-medico/${record.id}/editar`}
+            className="text-sm font-semibold text-emerald-700 hover:text-emerald-800"
+          >
+            Editar
+          </Link>
+        </div>
+      ) : null}
     </article>
   );
 }
 
 export default async function HistorialMedicoPage({
   params,
+  searchParams,
 }: HistorialMedicoPageProps) {
   const { id } = await params;
   const supabase = await createClient();
@@ -240,6 +268,10 @@ export default async function HistorialMedicoPage({
   ).length;
   const totalCount = records.length;
   const isArchived = Boolean(pet.archived_at);
+  const resolvedSearchParams = await searchParams;
+  const errorMessage = resolvedSearchParams?.error
+    ? errorMessages[resolvedSearchParams.error]
+    : null;
 
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
@@ -338,6 +370,12 @@ export default async function HistorialMedicoPage({
           </div>
         </section>
 
+        {errorMessage ? (
+          <p className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {errorMessage}
+          </p>
+        ) : null}
+
         <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -364,7 +402,12 @@ export default async function HistorialMedicoPage({
           ) : (
             <div className="mt-6 grid gap-4">
               {records.map((record) => (
-                <MedicalRecordCard key={record.id} record={record} />
+                <MedicalRecordCard
+                  key={record.id}
+                  petId={pet.id}
+                  record={record}
+                  canEdit={!isArchived}
+                />
               ))}
             </div>
           )}
