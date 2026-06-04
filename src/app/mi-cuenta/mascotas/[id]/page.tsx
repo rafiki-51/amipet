@@ -45,6 +45,13 @@ type ReminderSummary = {
   due_at: string;
 };
 
+type ActiveMedicationSummary = {
+  id: string;
+  medication_name: string;
+  start_date: string;
+  created_at: string;
+};
+
 type MascotaDetallePageProps = {
   params: Promise<{
     id: string;
@@ -334,6 +341,105 @@ export default async function MascotaDetallePage({
   const completedReminders = completedRemindersCountError
     ? 0
     : completedRemindersCount ?? 0;
+  const { data: latestActiveMedications, error: latestMedicationError } =
+    await supabase
+      .from("pet_medications")
+      .select("id, medication_name, start_date, created_at")
+      .eq("pet_id", pet.id)
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .order("start_date", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .returns<ActiveMedicationSummary[]>();
+
+  if (latestMedicationError) {
+    console.error(
+      "Failed to load customer pet latest active medication",
+      latestMedicationError,
+    );
+  }
+
+  const {
+    count: medicationsCount,
+    error: medicationsCountError,
+  } = await supabase
+    .from("pet_medications")
+    .select("id", { count: "exact", head: true })
+    .eq("pet_id", pet.id)
+    .eq("user_id", user.id);
+
+  if (medicationsCountError) {
+    console.error(
+      "Failed to load customer pet medications count",
+      medicationsCountError,
+    );
+  }
+
+  const {
+    count: activeMedicationsCount,
+    error: activeMedicationsCountError,
+  } = await supabase
+    .from("pet_medications")
+    .select("id", { count: "exact", head: true })
+    .eq("pet_id", pet.id)
+    .eq("user_id", user.id)
+    .eq("status", "active");
+
+  if (activeMedicationsCountError) {
+    console.error(
+      "Failed to load customer pet active medications count",
+      activeMedicationsCountError,
+    );
+  }
+
+  const {
+    count: pausedMedicationsCount,
+    error: pausedMedicationsCountError,
+  } = await supabase
+    .from("pet_medications")
+    .select("id", { count: "exact", head: true })
+    .eq("pet_id", pet.id)
+    .eq("user_id", user.id)
+    .eq("status", "paused");
+
+  if (pausedMedicationsCountError) {
+    console.error(
+      "Failed to load customer pet paused medications count",
+      pausedMedicationsCountError,
+    );
+  }
+
+  const {
+    count: completedMedicationsCount,
+    error: completedMedicationsCountError,
+  } = await supabase
+    .from("pet_medications")
+    .select("id", { count: "exact", head: true })
+    .eq("pet_id", pet.id)
+    .eq("user_id", user.id)
+    .eq("status", "completed");
+
+  if (completedMedicationsCountError) {
+    console.error(
+      "Failed to load customer pet completed medications count",
+      completedMedicationsCountError,
+    );
+  }
+
+  const latestActiveMedication = latestMedicationError
+    ? null
+    : latestActiveMedications?.[0];
+  const totalMedications = medicationsCountError ? 0 : medicationsCount ?? 0;
+  const activeMedications = activeMedicationsCountError
+    ? 0
+    : activeMedicationsCount ?? 0;
+  const pausedMedications = pausedMedicationsCountError
+    ? 0
+    : pausedMedicationsCount ?? 0;
+  const completedMedications = completedMedicationsCountError
+    ? 0
+    : completedMedicationsCount ?? 0;
 
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
@@ -506,7 +612,7 @@ export default async function MascotaDetallePage({
             </span>
           </div>
 
-          <div className="mt-6 grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+          <div className="mt-6 grid gap-4 lg:grid-cols-2">
             <article className="rounded-xl border border-slate-100 bg-slate-50 p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
@@ -717,6 +823,88 @@ export default async function MascotaDetallePage({
                 Ver recordatorios
               </Link>
             </article>
+
+            <article className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-lg font-bold tracking-tight text-slate-950">
+                    Medicamentos
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    {totalMedications > 0
+                      ? "Consulta medicamentos y tratamientos activos, pausados y completados."
+                      : isArchived
+                        ? "No hay medicamentos registrados para consultar."
+                        : "Aun no hay medicamentos registrados. Ingresa al modulo para agregar el primero."}
+                  </p>
+                </div>
+                <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 sm:self-start">
+                  Disponible
+                </span>
+              </div>
+
+              <dl className="mt-5 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl bg-white p-4">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Medicamento activo mas reciente
+                  </dt>
+                  <dd className="mt-2 text-base font-semibold text-slate-950">
+                    {latestActiveMedication
+                      ? displayValue(latestActiveMedication.medication_name)
+                      : "Pendiente"}
+                  </dd>
+                </div>
+                <div className="rounded-xl bg-white p-4">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Fecha de inicio
+                  </dt>
+                  <dd className="mt-2 text-base font-semibold text-slate-950">
+                    {latestActiveMedication
+                      ? formatDate(latestActiveMedication.start_date)
+                      : "Pendiente"}
+                  </dd>
+                </div>
+                <div className="rounded-xl bg-white p-4">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Activos
+                  </dt>
+                  <dd className="mt-2 text-base font-semibold text-slate-950">
+                    {activeMedications}
+                  </dd>
+                </div>
+                <div className="rounded-xl bg-white p-4">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Pausados
+                  </dt>
+                  <dd className="mt-2 text-base font-semibold text-slate-950">
+                    {pausedMedications}
+                  </dd>
+                </div>
+                <div className="rounded-xl bg-white p-4">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Completados
+                  </dt>
+                  <dd className="mt-2 text-base font-semibold text-slate-950">
+                    {completedMedications}
+                  </dd>
+                </div>
+                <div className="rounded-xl bg-white p-4">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Total registros
+                  </dt>
+                  <dd className="mt-2 text-base font-semibold text-slate-950">
+                    {totalMedications}
+                  </dd>
+                </div>
+              </dl>
+
+              <Link
+                href={`/mi-cuenta/mascotas/${pet.id}/medicamentos`}
+                className="mt-5 inline-flex justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
+              >
+                Ver medicamentos
+              </Link>
+            </article>
           </div>
 
           <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50 p-4">
@@ -724,7 +912,6 @@ export default async function MascotaDetallePage({
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {[
                 "Historial medico",
-                "Medicamentos",
                 "Documentos",
               ].map((item) => (
                 <div key={item} className="rounded-xl bg-white p-3">
