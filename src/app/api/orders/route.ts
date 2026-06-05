@@ -25,29 +25,18 @@ type ValidatedOrderItem = {
   quantity: number;
 };
 
-type ProductRow = {
-  id: string;
-  name: string;
-  price: number;
-  stock: number;
-  is_active: boolean;
+type NormalizedOrderItem = {
+  product_id: string;
+  quantity: number;
 };
 
-type DeliveryZoneRow = {
-  id: string;
-  name: string;
-  delivery_fee: number;
-  is_active: boolean;
-};
-
-type OrderResponseRow = {
-  id: string;
+type CheckoutOrderRpcRow = {
+  order_id: string;
   order_number: string;
   status: string;
   subtotal: number;
   delivery_fee: number;
   total: number;
-  idempotency_payload_hash?: string | null;
 };
 
 const validPaymentMethods = new Set<string>(
@@ -82,6 +71,28 @@ function isValidIdempotencyKey(value: string) {
   return idempotencyKeyPattern.test(value);
 }
 
+function normalizeItems(items: ValidatedOrderItem[]) {
+  const quantitiesByProductId = new Map<string, number>();
+
+  for (const item of items) {
+    const nextQuantity =
+      (quantitiesByProductId.get(item.productId) ?? 0) + item.quantity;
+
+    if (nextQuantity > MAX_QUANTITY_PER_ITEM) {
+      return null;
+    }
+
+    quantitiesByProductId.set(item.productId, nextQuantity);
+  }
+
+  return Array.from(quantitiesByProductId.entries())
+    .map(([productId, quantity]) => ({
+      product_id: productId,
+      quantity,
+    }))
+    .sort((a, b) => a.product_id.localeCompare(b.product_id));
+}
+
 function createPayloadHash(input: {
   name: string;
   phone: string;
@@ -90,17 +101,8 @@ function createPayloadHash(input: {
   references?: string;
   notes?: string;
   paymentMethod: string;
-  items: ValidatedOrderItem[];
+  items: NormalizedOrderItem[];
 }) {
-  const quantitiesByProductId = new Map<string, number>();
-
-  for (const item of input.items) {
-    quantitiesByProductId.set(
-      item.productId,
-      (quantitiesByProductId.get(item.productId) ?? 0) + item.quantity,
-    );
-  }
-
   const normalizedPayload = {
     name: input.name,
     phone: input.phone,
@@ -111,9 +113,7 @@ function createPayloadHash(input: {
     },
     paymentMethod: input.paymentMethod,
     notes: input.notes ?? null,
-    items: Array.from(quantitiesByProductId.entries())
-      .map(([productId, quantity]) => ({ productId, quantity }))
-      .sort((a, b) => a.productId.localeCompare(b.productId)),
+    items: input.items,
   };
 
   return createHash("sha256")
@@ -121,15 +121,76 @@ function createPayloadHash(input: {
     .digest("hex");
 }
 
-function createOrderResponse(order: OrderResponseRow) {
+function createOrderResponse(order: CheckoutOrderRpcRow) {
   return {
-    orderId: order.id,
+    orderId: order.order_id,
     orderNumber: order.order_number,
     status: order.status,
     subtotal: order.subtotal,
     deliveryFee: order.delivery_fee,
     total: order.total,
   };
+}
+
+function getRpcErrorCode(message?: string) {
+  if (!message) {
+    return "INTERNAL_ERROR";
+  }
+
+  if (message.includes("INVALID_PAYLOAD")) {
+    return "INVALID_PAYLOAD";
+  }
+
+  if (message.includes("IDEMPOTENCY_CONFLICT")) {
+    return "IDEMPOTENCY_CONFLICT";
+  }
+
+  if (message.includes("PRODUCT_NOT_FOUND")) {
+    return "PRODUCT_NOT_FOUND";
+  }
+
+  if (message.includes("DELIVERY_ZONE_NOT_FOUND")) {
+    return "DELIVERY_ZONE_NOT_FOUND";
+  }
+
+  if (message.includes("INSUFFICIENT_STOCK")) {
+    return "INSUFFICIENT_STOCK";
+  }
+
+  return "INTERNAL_ERROR";
+}
+
+function createRpcErrorResponse(code: string) {
+  switch (code) {
+    case "INVALID_PAYLOAD":
+      return jsonError("Payload invalido.", code, 400);
+    case "IDEMPOTENCY_CONFLICT":
+      return jsonError(
+        "La llave de idempotencia ya fue usada con otro pedido.",
+        code,
+        409,
+      );
+    case "PRODUCT_NOT_FOUND":
+      return jsonError(
+        "Uno o mas productos no fueron encontrados.",
+        code,
+        404,
+      );
+    case "DELIVERY_ZONE_NOT_FOUND":
+      return jsonError(
+        "Zona de entrega no encontrada.",
+        code,
+        404,
+      );
+    case "INSUFFICIENT_STOCK":
+      return jsonError(
+        "Stock insuficiente para uno o mas productos.",
+        code,
+        409,
+      );
+    default:
+      return jsonError("Error interno.", "INTERNAL_ERROR", 500);
+  }
 }
 
 function validateItems(items: unknown): ValidatedOrderItem[] | null {
@@ -162,14 +223,6 @@ function validateItems(items: unknown): ValidatedOrderItem[] | null {
   }
 
   return validatedItems;
-}
-
-function createOrderNumber() {
-  const now = new Date();
-  const datePart = now.toISOString().slice(0, 10).replaceAll("-", "");
-  const randomPart = Math.random().toString(36).slice(2, 6).toUpperCase();
-
-  return `AMI-${datePart}-${randomPart}`;
 }
 
 export async function POST(request: Request) {
@@ -207,6 +260,12 @@ export async function POST(request: Request) {
     return jsonError("Payload invalido.", "INVALID_PAYLOAD", 400);
   }
 
+  const normalizedItems = normalizeItems(items);
+
+  if (!normalizedItems) {
+    return jsonError("Payload invalido.", "INVALID_PAYLOAD", 400);
+  }
+
   const idempotencyPayloadHash = createPayloadHash({
     name,
     phone,
@@ -215,282 +274,42 @@ export async function POST(request: Request) {
     references,
     notes,
     paymentMethod,
-    items,
+    items: normalizedItems,
   });
 
   try {
-    const { data: existingIdempotentOrder, error: existingOrderError } =
-      await supabaseAdmin
-        .from("orders")
-        .select(
-          "id, order_number, status, subtotal, delivery_fee, total, idempotency_payload_hash",
-        )
-        .eq("idempotency_key", idempotencyKey)
-        .maybeSingle();
-
-    if (existingOrderError) {
-      console.error(
-        "Failed to load idempotent order",
-        existingOrderError,
-      );
-      return jsonError("Error interno.", "INTERNAL_ERROR", 500);
-    }
-
-    if (existingIdempotentOrder) {
-      const existingOrder = existingIdempotentOrder as OrderResponseRow;
-
-      if (existingOrder.idempotency_payload_hash !== idempotencyPayloadHash) {
-        return jsonError(
-          "La llave de idempotencia ya fue usada con otro pedido.",
-          "IDEMPOTENCY_CONFLICT",
-          409,
-        );
-      }
-
-      return NextResponse.json(createOrderResponse(existingOrder));
-    }
-
-    const { data: deliveryZone, error: deliveryZoneError } =
-      await supabaseAdmin
-        .from("delivery_zones")
-        .select("id, name, delivery_fee, is_active")
-        .eq("name", zoneName)
-        .eq("is_active", true)
-        .maybeSingle();
-
-    if (deliveryZoneError) {
-      console.error("Failed to load delivery zone for order", deliveryZoneError);
-      return jsonError("Error interno.", "INTERNAL_ERROR", 500);
-    }
-
-    if (!deliveryZone) {
-      return jsonError(
-        "Zona de entrega no encontrada.",
-        "DELIVERY_ZONE_NOT_FOUND",
-        404,
-      );
-    }
-
-    const productIds = Array.from(new Set(items.map((item) => item.productId)));
-    const { data: products, error: productsError } = await supabaseAdmin
-      .from("products")
-      .select("id, name, price, stock, is_active")
-      .in("id", productIds)
-      .eq("is_active", true);
-
-    if (productsError) {
-      console.error("Failed to load products for order", productsError);
-      return jsonError("Error interno.", "INTERNAL_ERROR", 500);
-    }
-
-    const productRows = (products ?? []) as ProductRow[];
-    const productsById = new Map(
-      productRows.map((product) => [product.id, product]),
-    );
-
-    if (productsById.size !== productIds.length) {
-      return jsonError(
-        "Uno o mas productos no fueron encontrados.",
-        "PRODUCT_NOT_FOUND",
-        404,
-      );
-    }
-
-    const quantitiesByProductId = new Map<string, number>();
-
-    for (const item of items) {
-      const nextQuantity =
-        (quantitiesByProductId.get(item.productId) ?? 0) + item.quantity;
-
-      if (nextQuantity > MAX_QUANTITY_PER_ITEM) {
-        return jsonError("Payload invalido.", "INVALID_PAYLOAD", 400);
-      }
-
-      quantitiesByProductId.set(
-        item.productId,
-        nextQuantity,
-      );
-    }
-
-    for (const [productId, quantity] of quantitiesByProductId) {
-      const product = productsById.get(productId);
-
-      if (!product || product.stock < quantity) {
-        return jsonError(
-          "Stock insuficiente para uno o mas productos.",
-          "INSUFFICIENT_STOCK",
-          409,
-        );
-      }
-    }
-
-    const orderItems = items.map((item) => {
-      const product = productsById.get(item.productId);
-
-      if (!product) {
-        throw new Error(`Missing product after validation: ${item.productId}`);
-      }
-
-      return {
-        product,
-        quantity: item.quantity,
-        subtotal: product.price * item.quantity,
-      };
+    const { data, error } = await supabaseAdmin.rpc("create_checkout_order", {
+      p_customer_name: name,
+      p_customer_phone: phone,
+      p_zone_name: zoneName,
+      p_address: address,
+      p_references: references ?? null,
+      p_payment_method: paymentMethod,
+      p_notes: notes ?? null,
+      p_idempotency_key: idempotencyKey,
+      p_idempotency_payload_hash: idempotencyPayloadHash,
+      p_items: normalizedItems,
     });
 
-    const subtotal = orderItems.reduce(
-      (total, item) => total + item.subtotal,
-      0,
-    );
-    const zone = deliveryZone as DeliveryZoneRow;
-    const deliveryFee = zone.delivery_fee;
-    const total = subtotal + deliveryFee;
+    if (error) {
+      const code = getRpcErrorCode(error.message);
 
-    const { data: existingCustomer, error: existingCustomerError } =
-      await supabaseAdmin
-        .from("customers")
-        .select("id")
-        .eq("phone", phone)
-        .maybeSingle();
-
-    if (existingCustomerError) {
-      console.error("Failed to load customer for order", existingCustomerError);
-      return jsonError("Error interno.", "INTERNAL_ERROR", 500);
-    }
-
-    let customerId = existingCustomer?.id as string | undefined;
-
-    if (!customerId) {
-      const { data: newCustomer, error: createCustomerError } =
-        await supabaseAdmin
-          .from("customers")
-          .insert({ name, phone })
-          .select("id")
-          .single();
-
-      if (createCustomerError) {
-        console.error("Failed to create customer for order", createCustomerError);
-        return jsonError("Error interno.", "INTERNAL_ERROR", 500);
+      if (code === "INTERNAL_ERROR") {
+        console.error("Failed to create checkout order through RPC", error);
       }
 
-      customerId = newCustomer.id as string;
+      return createRpcErrorResponse(code);
     }
 
-    const { data: newAddress, error: createAddressError } = await supabaseAdmin
-      .from("addresses")
-      .insert({
-        customer_id: customerId,
-        delivery_zone_id: zone.id,
-        address,
-        delivery_references: references ?? null,
-      })
-      .select("id")
-      .single();
+    const order = Array.isArray(data) ? data[0] : data;
 
-    if (createAddressError) {
-      console.error("Failed to create address for order", createAddressError);
-      return jsonError("Error interno.", "INTERNAL_ERROR", 500);
-    }
-
-    const orderNumber = createOrderNumber();
-    const { data: newOrder, error: createOrderError } = await supabaseAdmin
-      .from("orders")
-      .insert({
-        order_number: orderNumber,
-        customer_id: customerId,
-        address_id: newAddress.id,
-        status: "recibido",
-        payment_method: paymentMethod,
-        subtotal,
-        delivery_fee: deliveryFee,
-        total,
-        notes: notes ?? null,
-        idempotency_key: idempotencyKey,
-        idempotency_payload_hash: idempotencyPayloadHash,
-      })
-      .select(
-        "id, order_number, status, subtotal, delivery_fee, total, idempotency_payload_hash",
-      )
-      .single();
-
-    if (createOrderError) {
-      if (createOrderError.code === "23505") {
-        const { data: retryOrder, error: retryOrderError } =
-          await supabaseAdmin
-            .from("orders")
-            .select(
-              "id, order_number, status, subtotal, delivery_fee, total, idempotency_payload_hash",
-            )
-            .eq("idempotency_key", idempotencyKey)
-            .maybeSingle();
-
-        if (retryOrderError) {
-          console.error("Failed to load order after idempotency conflict", {
-            idempotencyKey,
-            error: retryOrderError,
-          });
-          return jsonError("Error interno.", "INTERNAL_ERROR", 500);
-        }
-
-        if (retryOrder) {
-          const existingOrder = retryOrder as OrderResponseRow;
-
-          if (existingOrder.idempotency_payload_hash === idempotencyPayloadHash) {
-            return NextResponse.json(createOrderResponse(existingOrder));
-          }
-        }
-
-        return jsonError(
-          "La llave de idempotencia ya fue usada con otro pedido.",
-          "IDEMPOTENCY_CONFLICT",
-          409,
-        );
-      }
-
-      console.error("Failed to create order", createOrderError);
-      return jsonError("Error interno.", "INTERNAL_ERROR", 500);
-    }
-
-    const { error: createItemsError } = await supabaseAdmin
-      .from("order_items")
-      .insert(
-        orderItems.map((item) => ({
-          order_id: newOrder.id,
-          product_id: item.product.id,
-          product_name: item.product.name,
-          quantity: item.quantity,
-          unit_price: item.product.price,
-          subtotal: item.subtotal,
-        })),
-      );
-
-    if (createItemsError) {
-      console.error("Failed to create order items", createItemsError);
-      return jsonError("Error interno.", "INTERNAL_ERROR", 500);
-    }
-
-    const { error: createStatusHistoryError } = await supabaseAdmin
-      .from("order_status_history")
-      .insert({
-        order_id: newOrder.id,
-        previous_status: null,
-        new_status: "recibido",
-        changed_by: null,
-        notes: "Pedido creado desde checkout.",
-      });
-
-    if (createStatusHistoryError) {
-      console.error(
-        "Failed to create order status history",
-        createStatusHistoryError,
-      );
+    if (!order) {
+      console.error("Checkout order RPC returned no data");
       return jsonError("Error interno.", "INTERNAL_ERROR", 500);
     }
 
     return NextResponse.json(
-      {
-        ...createOrderResponse(newOrder as OrderResponseRow),
-      },
+      createOrderResponse(order as CheckoutOrderRpcRow),
       { status: 201 },
     );
   } catch (error) {
