@@ -28,6 +28,11 @@ type MedicationFormData = {
   status: string;
 };
 
+type OwnedMedication = {
+  id: string;
+  status: string;
+};
+
 type MedicationFormValidation =
   | {
       status: "valid";
@@ -162,11 +167,11 @@ async function requireOwnedMedication(
 ) {
   const { data: medication, error } = await supabase
     .from("pet_medications")
-    .select("id")
+    .select("id, status")
     .eq("id", medicationId)
     .eq("pet_id", petId)
     .eq("user_id", userId)
-    .maybeSingle();
+    .maybeSingle<OwnedMedication>();
 
   if (error) {
     console.error("Failed to validate pet medication ownership", error);
@@ -176,7 +181,10 @@ async function requireOwnedMedication(
   return { medication, error: null };
 }
 
-function validateMedicationForm(formData: FormData): MedicationFormValidation {
+function validateMedicationForm(
+  formData: FormData,
+  validateStatus = true,
+): MedicationFormValidation {
   const medicationName = getString(formData, "medication_name");
   const medicationType = getString(formData, "medication_type");
   const startDate = getString(formData, "start_date");
@@ -205,7 +213,7 @@ function validateMedicationForm(formData: FormData): MedicationFormValidation {
     }
   }
 
-  if (!allowedStatuses.has(status)) {
+  if (validateStatus && !allowedStatuses.has(status)) {
     return { status: "error", error: "status" };
   }
 
@@ -331,7 +339,7 @@ export async function updatePetMedication(
     redirect(getMedicationsPath(petId));
   }
 
-  const validation = validateMedicationForm(formData);
+  const validation = validateMedicationForm(formData, false);
 
   if (validation.status === "error") {
     redirectEditWithError(petId, medicationId, validation.error);
@@ -339,7 +347,10 @@ export async function updatePetMedication(
 
   const { error } = await supabase
     .from("pet_medications")
-    .update(validation.data)
+    .update({
+      ...validation.data,
+      status: medication.status,
+    })
     .eq("id", medicationId)
     .eq("pet_id", petId)
     .eq("user_id", user.id);

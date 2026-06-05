@@ -124,7 +124,7 @@ export async function updatePet(petId: string, formData: FormData) {
 
   const { data: existingPet, error: existingPetError } = await supabase
     .from("pets")
-    .select("id")
+    .select("id, archived_at")
     .eq("id", petId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -136,6 +136,10 @@ export async function updatePet(petId: string, formData: FormData) {
 
   if (!existingPet) {
     redirect("/mi-cuenta/mascotas");
+  }
+
+  if (existingPet.archived_at) {
+    redirect(`/mi-cuenta/mascotas/${petId}`);
   }
 
   const name = getString(formData, "name");

@@ -18,6 +18,11 @@ type VaccinationFormData = {
   status: string;
 };
 
+type OwnedVaccination = {
+  id: string;
+  status: string;
+};
+
 type VaccinationFormValidation =
   | {
       status: "valid";
@@ -165,11 +170,11 @@ async function requireOwnedVaccination(
 ) {
   const { data: vaccination, error } = await supabase
     .from("pet_vaccinations")
-    .select("id")
+    .select("id, status")
     .eq("id", vaccinationId)
     .eq("pet_id", petId)
     .eq("user_id", userId)
-    .maybeSingle();
+    .maybeSingle<OwnedVaccination>();
 
   if (error) {
     console.error("Failed to validate pet vaccination ownership", error);
@@ -181,11 +186,12 @@ async function requireOwnedVaccination(
 
 function validateVaccinationForm(
   formData: FormData,
+  statusOverride?: string,
 ): VaccinationFormValidation {
   const vaccineName = getString(formData, "vaccine_name");
   const administeredAt = getString(formData, "administered_at");
   const nextDueAt = getOptionalString(formData, "next_due_at");
-  const status = getString(formData, "status") || "applied";
+  const status = statusOverride ?? (getString(formData, "status") || "applied");
 
   if (!vaccineName || !administeredAt) {
     return { status: "error", error: "required" };
@@ -336,7 +342,7 @@ export async function updatePetVaccination(
     redirect(getVaccinationsPath(petId));
   }
 
-  const validation = validateVaccinationForm(formData);
+  const validation = validateVaccinationForm(formData, vaccination.status);
 
   if (validation.status === "error") {
     redirectEditWithError(petId, vaccinationId, validation.error);
@@ -344,7 +350,10 @@ export async function updatePetVaccination(
 
   const { error } = await supabase
     .from("pet_vaccinations")
-    .update(validation.data)
+    .update({
+      ...validation.data,
+      status: vaccination.status,
+    })
     .eq("id", vaccinationId)
     .eq("pet_id", petId)
     .eq("user_id", user.id);

@@ -29,6 +29,13 @@ type ReminderFormData = {
   related_vaccination_id: string | null;
 };
 
+type OwnedReminder = {
+  id: string;
+  status: string;
+  source: string;
+  related_vaccination_id: string | null;
+};
+
 type ReminderFormValidation =
   | {
       status: "valid";
@@ -166,11 +173,11 @@ async function requireOwnedReminder(
 ) {
   const { data: reminder, error } = await supabase
     .from("pet_reminders")
-    .select("id")
+    .select("id, status, source, related_vaccination_id")
     .eq("id", reminderId)
     .eq("pet_id", petId)
     .eq("user_id", userId)
-    .maybeSingle();
+    .maybeSingle<OwnedReminder>();
 
   if (error) {
     console.error("Failed to validate pet reminder ownership", error);
@@ -202,7 +209,10 @@ async function requireOwnedVaccination(
   return { vaccination, error: null };
 }
 
-function validateReminderForm(formData: FormData): ReminderFormValidation {
+function validateReminderForm(
+  formData: FormData,
+  validateStateFields = true,
+): ReminderFormValidation {
   const title = getString(formData, "title");
   const reminderType = getString(formData, "reminder_type");
   const dueAt = getString(formData, "due_at");
@@ -225,20 +235,22 @@ function validateReminderForm(formData: FormData): ReminderFormValidation {
     return { status: "error", error: "date" };
   }
 
-  if (!allowedStatuses.has(status)) {
-    return { status: "error", error: "status" };
-  }
+  if (validateStateFields) {
+    if (!allowedStatuses.has(status)) {
+      return { status: "error", error: "status" };
+    }
 
-  if (!allowedSources.has(source)) {
-    return { status: "error", error: "source" };
-  }
+    if (!allowedSources.has(source)) {
+      return { status: "error", error: "source" };
+    }
 
-  if (source === "vaccination" && !relatedVaccinationId) {
-    return { status: "error", error: "vaccination" };
-  }
+    if (source === "vaccination" && !relatedVaccinationId) {
+      return { status: "error", error: "vaccination" };
+    }
 
-  if (relatedVaccinationId && !uuidPattern.test(relatedVaccinationId)) {
-    return { status: "error", error: "vaccination" };
+    if (relatedVaccinationId && !uuidPattern.test(relatedVaccinationId)) {
+      return { status: "error", error: "vaccination" };
+    }
   }
 
   return {
@@ -392,26 +404,20 @@ export async function updatePetReminder(
     redirect(getRemindersPath(petId));
   }
 
-  const validation = validateReminderForm(formData);
+  const validation = validateReminderForm(formData, false);
 
   if (validation.status === "error") {
     redirectEditWithError(petId, reminderId, validation.error);
   }
 
-  const relatedVaccination = await validateRelatedVaccination(
-    supabase,
-    user.id,
-    petId,
-    validation.data.related_vaccination_id,
-  );
-
-  if (!relatedVaccination.valid) {
-    redirectEditWithError(petId, reminderId, "vaccination");
-  }
-
   const { error } = await supabase
     .from("pet_reminders")
-    .update(validation.data)
+    .update({
+      ...validation.data,
+      status: reminder.status,
+      source: reminder.source,
+      related_vaccination_id: reminder.related_vaccination_id,
+    })
     .eq("id", reminderId)
     .eq("pet_id", petId)
     .eq("user_id", user.id);
