@@ -5,14 +5,26 @@ import { createClient } from "@/lib/supabase/server";
 
 const adminRoles = new Set(["admin", "operator"]);
 
-export async function requireAdminApiSession() {
+type AdminApiUserResult =
+  | {
+      user: {
+        id: string;
+      };
+    }
+  | {
+      response: NextResponse;
+    };
+
+export async function getAdminApiUser(): Promise<AdminApiUserResult> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return {
+      response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+    };
   }
 
   const { data: profile, error } = await supabase
@@ -26,7 +38,19 @@ export async function requireAdminApiSession() {
   }
 
   if (error || !profile || !adminRoles.has(profile.role as string)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return {
+      response: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
+    };
+  }
+
+  return { user };
+}
+
+export async function requireAdminApiSession() {
+  const authResult = await getAdminApiUser();
+
+  if ("response" in authResult) {
+    return authResult.response;
   }
 
   return null;

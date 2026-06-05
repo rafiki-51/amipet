@@ -40,6 +40,7 @@ type DeliveryZoneRow = {
 const validPaymentMethods = new Set<string>(
   paymentMethods.map((method) => method.id),
 );
+const MAX_QUANTITY_PER_ITEM = 99;
 
 function jsonError(message: string, code: string, status: number) {
   return NextResponse.json({ error: message, code }, { status });
@@ -81,7 +82,9 @@ function validateItems(items: unknown): ValidatedOrderItem[] | null {
       !productId ||
       typeof quantity !== "number" ||
       !Number.isInteger(quantity) ||
-      quantity <= 0
+      !Number.isSafeInteger(quantity) ||
+      quantity < 1 ||
+      quantity > MAX_QUANTITY_PER_ITEM
     ) {
       return null;
     }
@@ -181,9 +184,16 @@ export async function POST(request: Request) {
     const quantitiesByProductId = new Map<string, number>();
 
     for (const item of items) {
+      const nextQuantity =
+        (quantitiesByProductId.get(item.productId) ?? 0) + item.quantity;
+
+      if (nextQuantity > MAX_QUANTITY_PER_ITEM) {
+        return jsonError("Payload invalido.", "INVALID_PAYLOAD", 400);
+      }
+
       quantitiesByProductId.set(
         item.productId,
-        (quantitiesByProductId.get(item.productId) ?? 0) + item.quantity,
+        nextQuantity,
       );
     }
 
@@ -235,17 +245,7 @@ export async function POST(request: Request) {
 
     let customerId = existingCustomer?.id as string | undefined;
 
-    if (customerId) {
-      const { error: updateCustomerError } = await supabaseAdmin
-        .from("customers")
-        .update({ name })
-        .eq("id", customerId);
-
-      if (updateCustomerError) {
-        console.error("Failed to update customer for order", updateCustomerError);
-        return jsonError("Error interno.", "INTERNAL_ERROR", 500);
-      }
-    } else {
+    if (!customerId) {
       const { data: newCustomer, error: createCustomerError } =
         await supabaseAdmin
           .from("customers")

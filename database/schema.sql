@@ -350,12 +350,19 @@ create table public.orders (
   total integer not null check (total >= 0),
   notes text,
   admin_notes text,
+  idempotency_key text,
+  idempotency_payload_hash text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
 create index orders_order_number_idx on public.orders (order_number);
 create index orders_customer_id_idx on public.orders (customer_id);
+create unique index orders_idempotency_key_unique_idx
+on public.orders (idempotency_key)
+where idempotency_key is not null;
+create index orders_customer_id_created_at_idx
+on public.orders (customer_id, created_at desc);
 create index orders_address_id_idx on public.orders (address_id);
 create index orders_status_idx on public.orders (status);
 create index orders_payment_method_idx on public.orders (payment_method);

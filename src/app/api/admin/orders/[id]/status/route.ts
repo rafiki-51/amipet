@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { orderStatuses } from "@/config/orders";
-import { requireAdminApiSession } from "@/lib/admin/auth";
+import { getAdminApiUser } from "@/lib/admin/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import type { OrderStatus } from "@/types/order";
 
@@ -25,10 +25,10 @@ function isOrderStatus(value: unknown): value is OrderStatus {
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
-  const authResponse = await requireAdminApiSession();
+  const authResult = await getAdminApiUser();
 
-  if (authResponse) {
-    return authResponse;
+  if ("response" in authResult) {
+    return authResult.response;
   }
 
   const { id } = await params;
@@ -100,7 +100,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         order_id: id,
         previous_status: previousStatus,
         new_status: nextStatus,
-        changed_by: null,
+        changed_by: authResult.user.id,
         notes: "Estado actualizado desde admin MVP",
       });
 
