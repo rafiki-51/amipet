@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { FormEvent } from "react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { paymentMethods, type PaymentMethodId } from "@/config/payment";
 import { useCart } from "@/context/CartContext";
 import { formatCurrency } from "@/lib/format";
@@ -15,6 +15,7 @@ type CheckoutForm = {
   references: string;
   notes: string;
   paymentMethod: PaymentMethodId | "";
+  website: string;
 };
 
 type CheckoutErrors = Partial<Record<keyof CheckoutForm, string>>;
@@ -40,6 +41,8 @@ type CreateOrderPayload = {
     productId: string;
     quantity: number;
   }>;
+  honeypot: string;
+  idempotencyKey: string;
 };
 
 type CreateOrderResponse = {
@@ -70,6 +73,7 @@ const initialForm: CheckoutForm = {
   references: "",
   notes: "",
   paymentMethod: "",
+  website: "",
 };
 
 function countPhoneDigits(phone: string) {
@@ -116,6 +120,8 @@ function getSubmitErrorMessage(errorResponse: ApiErrorResponse | null) {
       return "Uno o más productos ya no están disponibles.";
     case "INSUFFICIENT_STOCK":
       return "No hay stock suficiente para uno o más productos.";
+    case "IDEMPOTENCY_CONFLICT":
+      return "Detectamos un intento duplicado con datos distintos. Actualizá la página e intentá de nuevo.";
     default:
       return "No pudimos confirmar el pedido. Intentá nuevamente en unos minutos.";
   }
@@ -131,6 +137,8 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const idempotencyKeyRef = useRef<string | null>(null);
+  const idempotencyCartSignatureRef = useRef<string | null>(null);
 
   const errors = useMemo(
     () => validateForm(form, coverageZones),
@@ -139,6 +147,14 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
   const isFormValid = Object.keys(errors).length === 0;
   const canConfirm =
     isHydrated && items.length > 0 && isFormValid && !isSubmitting;
+  const cartSignature = useMemo(
+    () =>
+      items
+        .map((item) => `${item.product.id}:${item.quantity}`)
+        .sort()
+        .join("|"),
+    [items],
+  );
 
   function updateField<Field extends keyof CheckoutForm>(
     field: Field,
@@ -161,6 +177,18 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
     return submitted || touched[field] ? errors[field] : undefined;
   }
 
+  function getIdempotencyKey() {
+    if (
+      !idempotencyKeyRef.current ||
+      idempotencyCartSignatureRef.current !== cartSignature
+    ) {
+      idempotencyKeyRef.current = crypto.randomUUID();
+      idempotencyCartSignatureRef.current = cartSignature;
+    }
+
+    return idempotencyKeyRef.current;
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitted(true);
@@ -170,6 +198,7 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
       return;
     }
 
+    const idempotencyKey = getIdempotencyKey();
     const payload: CreateOrderPayload = {
       customer: {
         name: form.name.trim(),
@@ -186,6 +215,8 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
         productId: item.product.id,
         quantity: item.quantity,
       })),
+      honeypot: form.website.trim(),
+      idempotencyKey,
     };
 
     setIsSubmitting(true);
@@ -218,6 +249,8 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
         paymentMethod: form.paymentMethod,
         totalItems,
       });
+      idempotencyKeyRef.current = null;
+      idempotencyCartSignatureRef.current = null;
       clearCart();
     } catch {
       setSubmitError(
@@ -341,6 +374,23 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
               onSubmit={handleSubmit}
             >
               <div className="grid gap-5">
+                <label
+                  className="absolute left-[-10000px] top-auto h-px w-px overflow-hidden"
+                  aria-hidden="true"
+                >
+                  Website
+                  <input
+                    type="text"
+                    name="website"
+                    value={form.website}
+                    onChange={(event) =>
+                      updateField("website", event.target.value)
+                    }
+                    tabIndex={-1}
+                    autoComplete="off"
+                  />
+                </label>
+
                 <label className="block">
                   <span className="text-sm font-semibold text-slate-800">
                     Nombre completo
