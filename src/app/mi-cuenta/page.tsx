@@ -71,8 +71,8 @@ export default async function MiCuentaPage() {
               Hola, {displayValue(name)}
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              Administra tus datos de cliente y prepara el espacio donde vas a
-              poder consultar la informacion de tus mascotas.
+              Administra tus datos de cliente y consulta el expediente digital
+              de tus mascotas.
             </p>
           </div>
           <SignOutButton />
@@ -132,8 +132,8 @@ export default async function MiCuentaPage() {
               Ir a mis mascotas
             </Link>
             <p className="mt-3 text-xs leading-5 text-slate-500">
-              Cada mascota tendra su propio expediente digital cuando el modulo
-              este disponible.
+              Cada mascota tiene su propio expediente digital para seguimiento
+              de salud y cuidado.
             </p>
           </aside>
         </section>

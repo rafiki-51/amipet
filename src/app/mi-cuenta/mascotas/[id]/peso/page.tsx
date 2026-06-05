@@ -25,6 +25,14 @@ type PesoPageProps = {
   params: Promise<{
     id: string;
   }>;
+  searchParams?: Promise<{
+    error?: string;
+  }>;
+};
+
+const errorMessages: Record<string, string> = {
+  delete: "No pudimos eliminar el registro de peso. Intentalo nuevamente.",
+  archived: "Esta mascota esta archivada y solo permite consulta.",
 };
 
 function displayValue(value: string | number | null | undefined) {
@@ -64,7 +72,7 @@ function formatDate(value: string | null | undefined) {
   }).format(date);
 }
 
-export default async function PesoPage({ params }: PesoPageProps) {
+export default async function PesoPage({ params, searchParams }: PesoPageProps) {
   const { id } = await params;
   const supabase = await createClient();
   const {
@@ -124,6 +132,10 @@ export default async function PesoPage({ params }: PesoPageProps) {
   const weightLogs = logsError ? [] : logs || [];
   const latestLog = weightLogs[0];
   const isArchived = Boolean(pet.archived_at);
+  const resolvedSearchParams = await searchParams;
+  const errorMessage = resolvedSearchParams?.error
+    ? errorMessages[resolvedSearchParams.error]
+    : null;
 
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
@@ -205,6 +217,12 @@ export default async function PesoPage({ params }: PesoPageProps) {
             </p>
           </div>
         </section>
+
+        {errorMessage ? (
+          <p className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {errorMessage}
+          </p>
+        ) : null}
 
         <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">

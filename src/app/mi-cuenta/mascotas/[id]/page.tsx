@@ -147,7 +147,7 @@ export default async function MascotaDetallePage({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login?redirect=/mi-cuenta/mascotas");
+    redirect(`/login?redirect=/mi-cuenta/mascotas/${id}`);
   }
 
   const { data: profile, error: profileError } = await supabase
