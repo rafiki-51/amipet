@@ -52,6 +52,13 @@ type ActiveMedicationSummary = {
   created_at: string;
 };
 
+type MedicalRecordSummary = {
+  id: string;
+  title: string;
+  occurred_at: string;
+  created_at: string;
+};
+
 type MascotaDetallePageProps = {
   params: Promise<{
     id: string;
@@ -440,6 +447,86 @@ export default async function MascotaDetallePage({
   const completedMedications = completedMedicationsCountError
     ? 0
     : completedMedicationsCount ?? 0;
+  const { data: latestMedicalRecords, error: latestMedicalRecordError } =
+    await supabase
+      .from("pet_medical_records")
+      .select("id, title, occurred_at, created_at")
+      .eq("pet_id", pet.id)
+      .eq("user_id", user.id)
+      .order("occurred_at", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .returns<MedicalRecordSummary[]>();
+
+  if (latestMedicalRecordError) {
+    console.error(
+      "Failed to load customer pet latest medical record",
+      latestMedicalRecordError,
+    );
+  }
+
+  const {
+    count: medicalRecordsCount,
+    error: medicalRecordsCountError,
+  } = await supabase
+    .from("pet_medical_records")
+    .select("id", { count: "exact", head: true })
+    .eq("pet_id", pet.id)
+    .eq("user_id", user.id);
+
+  if (medicalRecordsCountError) {
+    console.error(
+      "Failed to load customer pet medical records count",
+      medicalRecordsCountError,
+    );
+  }
+
+  const {
+    count: consultationRecordsCount,
+    error: consultationRecordsCountError,
+  } = await supabase
+    .from("pet_medical_records")
+    .select("id", { count: "exact", head: true })
+    .eq("pet_id", pet.id)
+    .eq("user_id", user.id)
+    .eq("record_type", "consultation");
+
+  if (consultationRecordsCountError) {
+    console.error(
+      "Failed to load customer pet consultation records count",
+      consultationRecordsCountError,
+    );
+  }
+
+  const {
+    count: emergencyRecordsCount,
+    error: emergencyRecordsCountError,
+  } = await supabase
+    .from("pet_medical_records")
+    .select("id", { count: "exact", head: true })
+    .eq("pet_id", pet.id)
+    .eq("user_id", user.id)
+    .eq("record_type", "emergency");
+
+  if (emergencyRecordsCountError) {
+    console.error(
+      "Failed to load customer pet emergency records count",
+      emergencyRecordsCountError,
+    );
+  }
+
+  const latestMedicalRecord = latestMedicalRecordError
+    ? null
+    : latestMedicalRecords?.[0];
+  const totalMedicalRecords = medicalRecordsCountError
+    ? 0
+    : medicalRecordsCount ?? 0;
+  const consultationRecords = consultationRecordsCountError
+    ? 0
+    : consultationRecordsCount ?? 0;
+  const emergencyRecords = emergencyRecordsCountError
+    ? 0
+    : emergencyRecordsCount ?? 0;
 
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
@@ -905,15 +992,86 @@ export default async function MascotaDetallePage({
                 Ver medicamentos
               </Link>
             </article>
+
+            <article className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-lg font-bold tracking-tight text-slate-950">
+                    Historial medico
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    {totalMedicalRecords > 0
+                      ? "Consulta eventos medicos, consultas y emergencias registradas."
+                      : isArchived
+                        ? "No hay eventos medicos registrados para consultar."
+                        : "Aun no hay eventos medicos registrados. Ingresa al modulo para agregar el primero."}
+                  </p>
+                </div>
+                <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 sm:self-start">
+                  Disponible
+                </span>
+              </div>
+
+              <dl className="mt-5 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl bg-white p-4">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Ultimo evento medico
+                  </dt>
+                  <dd className="mt-2 text-base font-semibold text-slate-950">
+                    {latestMedicalRecord
+                      ? displayValue(latestMedicalRecord.title)
+                      : "Pendiente"}
+                  </dd>
+                </div>
+                <div className="rounded-xl bg-white p-4">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Fecha ultimo evento
+                  </dt>
+                  <dd className="mt-2 text-base font-semibold text-slate-950">
+                    {latestMedicalRecord
+                      ? formatDate(latestMedicalRecord.occurred_at)
+                      : "Pendiente"}
+                  </dd>
+                </div>
+                <div className="rounded-xl bg-white p-4">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Consultas
+                  </dt>
+                  <dd className="mt-2 text-base font-semibold text-slate-950">
+                    {consultationRecords}
+                  </dd>
+                </div>
+                <div className="rounded-xl bg-white p-4">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Emergencias
+                  </dt>
+                  <dd className="mt-2 text-base font-semibold text-slate-950">
+                    {emergencyRecords}
+                  </dd>
+                </div>
+                <div className="rounded-xl bg-white p-4 sm:col-span-2">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Total registros
+                  </dt>
+                  <dd className="mt-2 text-base font-semibold text-slate-950">
+                    {totalMedicalRecords}
+                  </dd>
+                </div>
+              </dl>
+
+              <Link
+                href={`/mi-cuenta/mascotas/${pet.id}/historial-medico`}
+                className="mt-5 inline-flex justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
+              >
+                Ver historial medico
+              </Link>
+            </article>
           </div>
 
           <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50 p-4">
             <p className="font-semibold text-slate-900">Proximos modulos</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {[
-                "Historial medico",
-                "Documentos",
-              ].map((item) => (
+              {["Documentos"].map((item) => (
                 <div key={item} className="rounded-xl bg-white p-3">
                   <p className="text-sm font-semibold text-slate-900">
                     {item}
