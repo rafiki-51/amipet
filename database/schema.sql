@@ -543,6 +543,9 @@ declare
   v_order_number text;
   v_subtotal integer;
   v_total integer;
+  v_normalized_items jsonb;
+  v_expected_product_count integer;
+  v_updated_product_count integer;
 begin
   if nullif(trim(coalesce(p_idempotency_key, '')), '') is null
     or nullif(trim(coalesce(p_idempotency_payload_hash, '')), '') is null
@@ -569,6 +572,9 @@ begin
     raise exception 'INVALID_PAYLOAD';
   end if;
 
+  -- Serialize concurrent retries that use the same idempotency key.
+  perform pg_advisory_xact_lock(hashtextextended(p_idempotency_key, 0));
+
   select
     o.id,
     o.order_number,
@@ -583,7 +589,7 @@ begin
   limit 1;
 
   if found then
-    if v_existing_order.idempotency_payload_hash <> p_idempotency_payload_hash then
+    if v_existing_order.idempotency_payload_hash is distinct from p_idempotency_payload_hash then
       raise exception 'IDEMPOTENCY_CONFLICT';
     end if;
 
@@ -614,6 +620,25 @@ begin
     raise exception 'INVALID_PAYLOAD';
   end if;
 
+  select jsonb_agg(
+    jsonb_build_object(
+      'product_id', normalized.product_id,
+      'quantity', normalized.quantity
+    )
+    order by normalized.product_id
+  )
+  into v_normalized_items
+  from (
+    select
+      (item->>'product_id')::uuid as product_id,
+      sum((item->>'quantity')::integer) as quantity
+    from jsonb_array_elements(p_items) as item
+    group by (item->>'product_id')::uuid
+  ) normalized;
+
+  select jsonb_array_length(v_normalized_items)
+  into v_expected_product_count;
+
   select dz.id, dz.delivery_fee
   into v_delivery_zone
   from public.delivery_zones dz
@@ -626,30 +651,27 @@ begin
   end if;
 
   if exists (
-    with normalized_items as (
-      select
-        (item->>'product_id')::uuid as product_id,
-        sum((item->>'quantity')::integer) as quantity
-      from jsonb_array_elements(p_items) as item
-      group by (item->>'product_id')::uuid
-    )
     select 1
-    from normalized_items
+    from jsonb_to_recordset(v_normalized_items)
+      as normalized_items(product_id uuid, quantity bigint)
     where quantity > 99
   ) then
     raise exception 'INVALID_PAYLOAD';
   end if;
 
+  -- Lock every requested product in a stable order before checking stock.
+  perform p.id
+  from public.products p
+  join jsonb_to_recordset(v_normalized_items)
+    as normalized_items(product_id uuid, quantity integer)
+    on p.id = normalized_items.product_id
+  order by p.id
+  for update of p;
+
   if exists (
-    with normalized_items as (
-      select
-        (item->>'product_id')::uuid as product_id,
-        sum((item->>'quantity')::integer) as quantity
-      from jsonb_array_elements(p_items) as item
-      group by (item->>'product_id')::uuid
-    )
     select 1
-    from normalized_items ni
+    from jsonb_to_recordset(v_normalized_items)
+      as ni(product_id uuid, quantity integer)
     left join public.products p
       on p.id = ni.product_id
       and p.is_active = true
@@ -659,15 +681,9 @@ begin
   end if;
 
   if exists (
-    with normalized_items as (
-      select
-        (item->>'product_id')::uuid as product_id,
-        sum((item->>'quantity')::integer) as quantity
-      from jsonb_array_elements(p_items) as item
-      group by (item->>'product_id')::uuid
-    )
     select 1
-    from normalized_items ni
+    from jsonb_to_recordset(v_normalized_items)
+      as ni(product_id uuid, quantity integer)
     join public.products p on p.id = ni.product_id
     where p.stock < ni.quantity
   ) then
@@ -676,13 +692,8 @@ begin
 
   select coalesce(sum(p.price * ni.quantity), 0)::integer
   into v_subtotal
-  from (
-    select
-      (item->>'product_id')::uuid as product_id,
-      sum((item->>'quantity')::integer) as quantity
-    from jsonb_array_elements(p_items) as item
-    group by (item->>'product_id')::uuid
-  ) ni
+  from jsonb_to_recordset(v_normalized_items)
+    as ni(product_id uuid, quantity integer)
   join public.products p
     on p.id = ni.product_id
     and p.is_active = true;
@@ -796,16 +807,25 @@ begin
     ni.quantity,
     p.price,
     p.price * ni.quantity
-  from (
-    select
-      (item->>'product_id')::uuid as product_id,
-      sum((item->>'quantity')::integer) as quantity
-    from jsonb_array_elements(p_items) as item
-    group by (item->>'product_id')::uuid
-  ) ni
+  from jsonb_to_recordset(v_normalized_items)
+    as ni(product_id uuid, quantity integer)
   join public.products p
     on p.id = ni.product_id
     and p.is_active = true;
+
+  update public.products p
+  set stock = p.stock - ni.quantity
+  from jsonb_to_recordset(v_normalized_items)
+    as ni(product_id uuid, quantity integer)
+  where p.id = ni.product_id
+    and p.is_active = true
+    and p.stock >= ni.quantity;
+
+  get diagnostics v_updated_product_count = row_count;
+
+  if v_updated_product_count <> v_expected_product_count then
+    raise exception 'INSUFFICIENT_STOCK';
+  end if;
 
   insert into public.order_status_history (
     order_id,
