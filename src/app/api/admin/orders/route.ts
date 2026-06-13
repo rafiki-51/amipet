@@ -21,6 +21,8 @@ type OrderRow = {
   status: OrderStatus;
   payment_method: PaymentMethodId;
   payment_status: PaymentStatus;
+  paid_at: string | null;
+  payment_confirmed_by: string | null;
   subtotal: number;
   delivery_fee: number;
   total: number;
@@ -86,6 +88,8 @@ function mapOrderRowToAdminOrder(row: OrderRow): AdminOrder {
     status: row.status,
     paymentMethod: row.payment_method,
     paymentStatus: row.payment_status,
+    paidAt: row.paid_at ?? undefined,
+    paymentConfirmedBy: row.payment_confirmed_by ?? undefined,
     subtotal: row.subtotal,
     deliveryFee: row.delivery_fee,
     total: row.total,
@@ -130,6 +134,8 @@ export async function GET() {
           status,
           payment_method,
           payment_status,
+          paid_at,
+          payment_confirmed_by,
           subtotal,
           delivery_fee,
           total,

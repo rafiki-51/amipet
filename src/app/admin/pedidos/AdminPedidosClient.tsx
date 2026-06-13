@@ -28,6 +28,18 @@ type StatusUpdateResponse = {
   code?: string;
 };
 
+type PaymentStatusUpdateResponse = {
+  orderId?: string;
+  status?: unknown;
+  previousPaymentStatus?: unknown;
+  paymentStatus?: unknown;
+  paidAt?: string | null;
+  paymentConfirmedBy?: string | null;
+  updatedAt?: string | null;
+  error?: string;
+  code?: string;
+};
+
 const initialFilters = {
   status: "todos",
   district: "todas",
@@ -59,6 +71,7 @@ export function AdminPedidosClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [updatingPayment, setUpdatingPayment] = useState(false);
 
   const fetchOrders = useCallback(async () => {
     setLoading(true);
@@ -191,6 +204,68 @@ export function AdminPedidosClient() {
     }
   };
 
+  const handlePaymentConfirmation = async (orderId: string) => {
+    setUpdatingPayment(true);
+    setError(null);
+
+    try {
+      const response = await fetch(
+        `/api/admin/orders/${orderId}/payment-status`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            paymentStatus: "paid",
+          }),
+        },
+      );
+
+      const payload = (await response.json()) as PaymentStatusUpdateResponse;
+
+      if (
+        !response.ok ||
+        !payload.orderId ||
+        !isOrderStatus(payload.status) ||
+        !isPaymentStatus(payload.paymentStatus)
+      ) {
+        throw new Error(payload.error ?? "No se pudo confirmar el pago.");
+      }
+
+      const updatedStatus = payload.status;
+      const updatedPaymentStatus = payload.paymentStatus;
+
+      setOrders((currentOrders) =>
+        sortOrdersByNewest(
+          currentOrders.map((order) =>
+            order.id === payload.orderId
+              ? {
+                  ...order,
+                  status: updatedStatus,
+                  paymentStatus: updatedPaymentStatus,
+                  paidAt: payload.paidAt ?? order.paidAt,
+                  paymentConfirmedBy:
+                    payload.paymentConfirmedBy ?? order.paymentConfirmedBy,
+                  updatedAt: payload.updatedAt ?? order.updatedAt,
+                }
+              : order,
+          ),
+        ),
+      );
+      setSelectedOrderId(orderId);
+    } catch (paymentError) {
+      console.error(paymentError);
+      setError(
+        paymentError instanceof Error
+          ? paymentError.message
+          : "No se pudo confirmar el pago del pedido.",
+      );
+    } finally {
+      setUpdatingPayment(false);
+    }
+  };
+
   const totalOrders = orders.length;
   const receivedOrders = orders.filter((order) => order.status === "recibido").length;
   const preparingOrders = orders.filter((order) => order.status === "preparando").length;
@@ -287,7 +362,9 @@ export function AdminPedidosClient() {
           <OrderDetail
             order={selectedOrder}
             onStatusChange={handleStatusChange}
-            isUpdatingStatus={updatingStatus}
+            onPaymentConfirm={handlePaymentConfirmation}
+            isUpdatingStatus={updatingStatus || updatingPayment}
+            isUpdatingPayment={updatingPayment}
           />
         ) : (
           <section className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">

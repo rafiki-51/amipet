@@ -17,6 +17,8 @@ export type AdminOrder = {
   status: OrderStatus;
   paymentMethod: PaymentMethodId;
   paymentStatus: PaymentStatus;
+  paidAt?: string;
+  paymentConfirmedBy?: string;
   subtotal: number;
   deliveryFee: number;
   total: number;

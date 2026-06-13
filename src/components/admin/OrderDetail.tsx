@@ -17,7 +17,9 @@ type OrderDetailProps = {
     status: OrderStatus,
     cancellationReason?: string,
   ) => void;
+  onPaymentConfirm: (orderId: string) => void;
   isUpdatingStatus: boolean;
+  isUpdatingPayment: boolean;
 };
 
 const allowedTransitions: Record<OrderStatus, OrderStatus[]> = {
@@ -31,7 +33,9 @@ const allowedTransitions: Record<OrderStatus, OrderStatus[]> = {
 export function OrderDetail({
   order,
   onStatusChange,
+  onPaymentConfirm,
   isUpdatingStatus,
+  isUpdatingPayment,
 }: OrderDetailProps) {
   const [cancellationInput, setCancellationInput] = useState({
     orderId: order.id,
@@ -43,13 +47,25 @@ export function OrderDetail({
     (method) => method.id === order.paymentMethod,
   );
   const availableTransitions = allowedTransitions[order.status].filter(
-    (status) => status !== "cancelado" || order.paymentStatus !== "paid",
+    (status) =>
+      (status !== "cancelado" || order.paymentStatus !== "paid") &&
+      (status !== "entregado" || order.paymentStatus === "paid"),
   );
   const isTerminal = availableTransitions.length === 0;
+  const canConfirmPayment =
+    order.paymentStatus === "pending" && order.status !== "cancelado";
+  const deliveryRequiresPayment =
+    order.status === "en-ruta" && order.paymentStatus !== "paid";
   const createdAt = new Intl.DateTimeFormat("es-CR", {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(order.createdAt));
+  const paidAt = order.paidAt
+    ? new Intl.DateTimeFormat("es-CR", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }).format(new Date(order.paidAt))
+    : null;
 
   function requestStatusChange(nextStatus: OrderStatus) {
     if (nextStatus !== "cancelado") {
@@ -69,6 +85,19 @@ export function OrderDetail({
     }
 
     onStatusChange(order.id, nextStatus, trimmedReason);
+  }
+
+  function requestPaymentConfirmation() {
+    if (
+      !canConfirmPayment ||
+      !window.confirm(
+        "¿Confirmás que el pago fue recibido? Esta acción no se puede revertir.",
+      )
+    ) {
+      return;
+    }
+
+    onPaymentConfirm(order.id);
   }
 
   return (
@@ -158,6 +187,32 @@ export function OrderDetail({
               <span className="font-medium text-slate-900">Estado:</span>{" "}
               {paymentStatusLabels[order.paymentStatus]}
             </p>
+            {order.paymentStatus === "paid" ? (
+              <>
+                <p>
+                  <span className="font-medium text-slate-900">
+                    Confirmado:
+                  </span>{" "}
+                  {paidAt || "Sin fecha registrada"}
+                </p>
+                <p className="break-all">
+                  <span className="font-medium text-slate-900">
+                    Confirmado por:
+                  </span>{" "}
+                  {order.paymentConfirmedBy || "Sin usuario registrado"}
+                </p>
+              </>
+            ) : null}
+            {canConfirmPayment ? (
+              <button
+                type="button"
+                disabled={isUpdatingPayment || isUpdatingStatus}
+                onClick={requestPaymentConfirmation}
+                className="mt-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+              >
+                {isUpdatingPayment ? "Confirmando pago..." : "Confirmar pago"}
+              </button>
+            ) : null}
             <p>
               <span className="font-medium text-slate-900">Notas:</span>{" "}
               {order.notes || "Sin notas"}
@@ -200,6 +255,12 @@ export function OrderDetail({
         <h3 className="text-sm font-semibold text-slate-800">
           Cambiar estado
         </h3>
+
+        {deliveryRequiresPayment ? (
+          <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            Confirmá el pago antes de marcar el pedido como entregado.
+          </p>
+        ) : null}
 
         {isTerminal ? (
           <p className="mt-2 text-sm text-slate-600">

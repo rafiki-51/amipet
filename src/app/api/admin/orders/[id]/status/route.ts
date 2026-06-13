@@ -24,6 +24,7 @@ const rpcErrorCodes = [
   "PAID_ORDER_CANNOT_BE_CANCELED",
   "ORDER_ITEMS_NOT_RESTORABLE",
   "STOCK_RESTORE_FAILED",
+  "PAYMENT_REQUIRED",
 ] as const;
 
 type RpcErrorCode = (typeof rpcErrorCodes)[number] | "INTERNAL_ERROR";
@@ -76,6 +77,12 @@ function createRpcErrorResponse(code: RpcErrorCode) {
       );
     case "STOCK_RESTORE_FAILED":
       return jsonError("No se pudo restaurar el inventario.", code, 500);
+    case "PAYMENT_REQUIRED":
+      return jsonError(
+        "Confirma el pago antes de marcar el pedido como entregado.",
+        code,
+        409,
+      );
     default:
       return jsonError("Error interno.", "INTERNAL_ERROR", 500);
   }
