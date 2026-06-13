@@ -1,4 +1,5 @@
 import type { PaymentMethodId } from "@/config/payment";
+import type { PaymentStatus } from "@/config/payment-status";
 import type { OrderStatus } from "@/types/order";
 
 export type AdminOrderItem = {
@@ -15,6 +16,7 @@ export type AdminOrder = {
   orderNumber: string;
   status: OrderStatus;
   paymentMethod: PaymentMethodId;
+  paymentStatus: PaymentStatus;
   subtotal: number;
   deliveryFee: number;
   total: number;

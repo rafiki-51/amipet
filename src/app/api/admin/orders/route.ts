@@ -3,6 +3,7 @@ import { requireAdminApiSession } from "@/lib/admin/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import type { AdminOrder } from "@/types/admin-order";
 import type { PaymentMethodId } from "@/config/payment";
+import type { PaymentStatus } from "@/config/payment-status";
 import type { OrderStatus } from "@/types/order";
 
 type OrderItemRow = {
@@ -19,6 +20,7 @@ type OrderRow = {
   order_number: string;
   status: OrderStatus;
   payment_method: PaymentMethodId;
+  payment_status: PaymentStatus;
   subtotal: number;
   delivery_fee: number;
   total: number;
@@ -83,6 +85,7 @@ function mapOrderRowToAdminOrder(row: OrderRow): AdminOrder {
     orderNumber: row.order_number,
     status: row.status,
     paymentMethod: row.payment_method,
+    paymentStatus: row.payment_status,
     subtotal: row.subtotal,
     deliveryFee: row.delivery_fee,
     total: row.total,
@@ -126,6 +129,7 @@ export async function GET() {
           order_number,
           status,
           payment_method,
+          payment_status,
           subtotal,
           delivery_fee,
           total,

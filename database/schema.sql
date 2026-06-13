@@ -345,6 +345,9 @@ create table public.orders (
       'coordinar-whatsapp'
     )
   ),
+  payment_status text not null default 'pending' check (
+    payment_status in ('pending', 'paid', 'canceled')
+  ),
   subtotal integer not null check (subtotal >= 0),
   delivery_fee integer not null default 0 check (delivery_fee >= 0),
   total integer not null check (total >= 0),
@@ -738,6 +741,7 @@ begin
       address_id,
       status,
       payment_method,
+      payment_status,
       subtotal,
       delivery_fee,
       total,
@@ -751,6 +755,7 @@ begin
       v_address_id,
       'recibido',
       p_payment_method,
+      'pending',
       v_subtotal,
       v_delivery_zone.delivery_fee,
       v_total,

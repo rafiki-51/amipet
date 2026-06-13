@@ -4,6 +4,7 @@ import {
 } from "@/components/admin/OrderStatusBadge";
 import { orderStatuses } from "@/config/orders";
 import { paymentMethods } from "@/config/payment";
+import { paymentStatusLabels } from "@/config/payment-status";
 import { formatCurrency } from "@/lib/format";
 import type { AdminOrder } from "@/types/admin-order";
 import type { OrderStatus } from "@/types/order";
@@ -109,6 +110,10 @@ export function OrderDetail({
             <p>
               <span className="font-medium text-slate-900">Metodo:</span>{" "}
               {paymentMethod?.label || order.paymentMethod}
+            </p>
+            <p>
+              <span className="font-medium text-slate-900">Estado:</span>{" "}
+              {paymentStatusLabels[order.paymentStatus]}
             </p>
             <p>
               <span className="font-medium text-slate-900">Notas:</span>{" "}
