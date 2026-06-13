@@ -10,6 +10,7 @@ import {
   type OrderFilterState,
 } from "@/components/admin/OrderFilters";
 import { orderStatuses } from "@/config/orders";
+import type { PaymentStatus } from "@/config/payment-status";
 import type { AdminOrder } from "@/types/admin-order";
 import type { OrderStatus } from "@/types/order";
 
@@ -21,8 +22,10 @@ type AdminOrdersResponse = {
 type StatusUpdateResponse = {
   orderId?: string;
   status?: unknown;
+  paymentStatus?: unknown;
   updatedAt?: string | null;
   error?: string;
+  code?: string;
 };
 
 const initialFilters = {
@@ -35,6 +38,12 @@ const validStatuses = new Set<string>(orderStatuses);
 
 function isOrderStatus(value: unknown): value is OrderStatus {
   return typeof value === "string" && validStatuses.has(value);
+}
+
+function isPaymentStatus(value: unknown): value is PaymentStatus {
+  return (
+    value === "pending" || value === "paid" || value === "canceled"
+  );
 }
 
 function sortOrdersByNewest(orders: AdminOrder[]) {
@@ -121,7 +130,11 @@ export function AdminPedidosClient() {
     );
   }, [filteredOrders, orders, selectedOrderId]);
 
-  const handleStatusChange = async (orderId: string, nextStatus: OrderStatus) => {
+  const handleStatusChange = async (
+    orderId: string,
+    nextStatus: OrderStatus,
+    cancellationReason?: string,
+  ) => {
     setUpdatingStatus(true);
     setError(null);
 
@@ -131,16 +144,25 @@ export function AdminPedidosClient() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ status: nextStatus }),
+        body: JSON.stringify({
+          status: nextStatus,
+          ...(nextStatus === "cancelado" ? { cancellationReason } : {}),
+        }),
       });
 
       const payload = (await response.json()) as StatusUpdateResponse;
 
-      if (!response.ok || !payload.orderId || !isOrderStatus(payload.status)) {
+      if (
+        !response.ok ||
+        !payload.orderId ||
+        !isOrderStatus(payload.status) ||
+        !isPaymentStatus(payload.paymentStatus)
+      ) {
         throw new Error(payload.error ?? "No se pudo actualizar el estado.");
       }
 
       const updatedStatus = payload.status;
+      const updatedPaymentStatus = payload.paymentStatus;
 
       setOrders((currentOrders) =>
         sortOrdersByNewest(
@@ -149,6 +171,7 @@ export function AdminPedidosClient() {
               ? {
                   ...order,
                   status: updatedStatus,
+                  paymentStatus: updatedPaymentStatus,
                   updatedAt: payload.updatedAt ?? order.updatedAt,
                 }
               : order,
@@ -158,7 +181,11 @@ export function AdminPedidosClient() {
       setSelectedOrderId(orderId);
     } catch (statusError) {
       console.error(statusError);
-      setError("No se pudo actualizar el estado del pedido.");
+      setError(
+        statusError instanceof Error
+          ? statusError.message
+          : "No se pudo actualizar el estado del pedido.",
+      );
     } finally {
       setUpdatingStatus(false);
     }

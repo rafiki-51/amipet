@@ -1,8 +1,9 @@
+import { useState } from "react";
+
 import {
   getOrderStatusLabel,
   OrderStatusBadge,
 } from "@/components/admin/OrderStatusBadge";
-import { orderStatuses } from "@/config/orders";
 import { paymentMethods } from "@/config/payment";
 import { paymentStatusLabels } from "@/config/payment-status";
 import { formatCurrency } from "@/lib/format";
@@ -11,8 +12,20 @@ import type { OrderStatus } from "@/types/order";
 
 type OrderDetailProps = {
   order: AdminOrder;
-  onStatusChange: (orderId: string, status: OrderStatus) => void;
+  onStatusChange: (
+    orderId: string,
+    status: OrderStatus,
+    cancellationReason?: string,
+  ) => void;
   isUpdatingStatus: boolean;
+};
+
+const allowedTransitions: Record<OrderStatus, OrderStatus[]> = {
+  recibido: ["preparando", "cancelado"],
+  preparando: ["en-ruta", "cancelado"],
+  "en-ruta": ["entregado", "cancelado"],
+  entregado: [],
+  cancelado: [],
 };
 
 export function OrderDetail({
@@ -20,13 +33,43 @@ export function OrderDetail({
   onStatusChange,
   isUpdatingStatus,
 }: OrderDetailProps) {
+  const [cancellationInput, setCancellationInput] = useState({
+    orderId: order.id,
+    value: "",
+  });
+  const cancellationReason =
+    cancellationInput.orderId === order.id ? cancellationInput.value : "";
   const paymentMethod = paymentMethods.find(
     (method) => method.id === order.paymentMethod,
   );
+  const availableTransitions = allowedTransitions[order.status].filter(
+    (status) => status !== "cancelado" || order.paymentStatus !== "paid",
+  );
+  const isTerminal = availableTransitions.length === 0;
   const createdAt = new Intl.DateTimeFormat("es-CR", {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(order.createdAt));
+
+  function requestStatusChange(nextStatus: OrderStatus) {
+    if (nextStatus !== "cancelado") {
+      onStatusChange(order.id, nextStatus);
+      return;
+    }
+
+    const trimmedReason = cancellationReason.trim();
+
+    if (
+      !trimmedReason ||
+      !window.confirm(
+        "¿Confirmás la cancelación? El stock elegible será restaurado.",
+      )
+    ) {
+      return;
+    }
+
+    onStatusChange(order.id, nextStatus, trimmedReason);
+  }
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -154,34 +197,64 @@ export function OrderDetail({
       </div>
 
       <div className="mt-6 rounded-xl border border-slate-200 p-4">
-        <label className="block">
-          <span className="text-sm font-semibold text-slate-800">
-            Cambiar estado
-          </span>
-          <select
-            value={order.status}
-            disabled={isUpdatingStatus}
-            onChange={(event) =>
-              onStatusChange(order.id, event.target.value as OrderStatus)
-            }
-            className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-sm"
-          >
-            {orderStatuses.map((status) => (
-              <option key={status} value={status}>
-                {getOrderStatusLabel(status)}
-              </option>
-            ))}
-          </select>
-        </label>
+        <h3 className="text-sm font-semibold text-slate-800">
+          Cambiar estado
+        </h3>
 
-        <button
-          type="button"
-          disabled={order.status === "entregado" || isUpdatingStatus}
-          onClick={() => onStatusChange(order.id, "entregado")}
-          className="mt-3 w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-        >
-          {isUpdatingStatus ? "Actualizando..." : "Marcar como entregado"}
-        </button>
+        {isTerminal ? (
+          <p className="mt-2 text-sm text-slate-600">
+            Este pedido está en un estado terminal y no permite más cambios.
+          </p>
+        ) : (
+          <>
+            {availableTransitions.includes("cancelado") ? (
+              <label className="mt-3 block">
+                <span className="text-sm font-medium text-slate-700">
+                  Motivo de cancelación
+                </span>
+                <textarea
+                  value={cancellationReason}
+                  disabled={isUpdatingStatus}
+                  onChange={(event) =>
+                    setCancellationInput({
+                      orderId: order.id,
+                      value: event.target.value,
+                    })
+                  }
+                  rows={3}
+                  placeholder="Motivo obligatorio para cancelar"
+                  className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-sm"
+                />
+              </label>
+            ) : null}
+
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {availableTransitions.map((nextStatus) => (
+                <button
+                  key={nextStatus}
+                  type="button"
+                  disabled={
+                    isUpdatingStatus ||
+                    (nextStatus === "cancelado" &&
+                      cancellationReason.trim().length === 0)
+                  }
+                  onClick={() => requestStatusChange(nextStatus)}
+                  className={`rounded-xl px-4 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:bg-slate-300 ${
+                    nextStatus === "cancelado"
+                      ? "bg-red-600 hover:bg-red-700"
+                      : "bg-emerald-600 hover:bg-emerald-700"
+                  }`}
+                >
+                  {isUpdatingStatus
+                    ? "Actualizando..."
+                    : nextStatus === "cancelado"
+                      ? "Cancelar pedido"
+                      : `Marcar como ${getOrderStatusLabel(nextStatus).toLowerCase()}`}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </section>
   );

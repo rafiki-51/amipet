@@ -12,9 +12,31 @@ type RouteContext = {
 
 type StatusPayload = {
   status?: unknown;
+  cancellationReason?: unknown;
 };
 
 const validStatuses = new Set<string>(orderStatuses);
+const rpcErrorCodes = [
+  "INVALID_PAYLOAD",
+  "ORDER_NOT_FOUND",
+  "INVALID_ORDER_TRANSITION",
+  "CANCELLATION_REASON_REQUIRED",
+  "PAID_ORDER_CANNOT_BE_CANCELED",
+  "ORDER_ITEMS_NOT_RESTORABLE",
+  "STOCK_RESTORE_FAILED",
+] as const;
+
+type RpcErrorCode = (typeof rpcErrorCodes)[number] | "INTERNAL_ERROR";
+
+type TransitionOrderStatusRow = {
+  order_id: string;
+  previous_status: OrderStatus;
+  status: OrderStatus;
+  payment_status: "pending" | "paid" | "canceled";
+  updated_at: string;
+  canceled_at: string | null;
+  stock_restored_at: string | null;
+};
 
 function jsonError(message: string, code: string, status: number) {
   return NextResponse.json({ error: message, code }, { status });
@@ -22,6 +44,41 @@ function jsonError(message: string, code: string, status: number) {
 
 function isOrderStatus(value: unknown): value is OrderStatus {
   return typeof value === "string" && validStatuses.has(value);
+}
+
+function getRpcErrorCode(message?: string): RpcErrorCode {
+  if (!message) {
+    return "INTERNAL_ERROR";
+  }
+
+  return (
+    rpcErrorCodes.find((code) => message.includes(code)) ?? "INTERNAL_ERROR"
+  );
+}
+
+function createRpcErrorResponse(code: RpcErrorCode) {
+  switch (code) {
+    case "INVALID_PAYLOAD":
+      return jsonError("Payload invalido.", code, 400);
+    case "ORDER_NOT_FOUND":
+      return jsonError("Pedido no encontrado.", code, 404);
+    case "INVALID_ORDER_TRANSITION":
+      return jsonError("Transicion de estado no permitida.", code, 409);
+    case "CANCELLATION_REASON_REQUIRED":
+      return jsonError("El motivo de cancelacion es obligatorio.", code, 400);
+    case "PAID_ORDER_CANNOT_BE_CANCELED":
+      return jsonError("Un pedido pagado no puede cancelarse.", code, 409);
+    case "ORDER_ITEMS_NOT_RESTORABLE":
+      return jsonError(
+        "No se puede restaurar el inventario de este pedido.",
+        code,
+        409,
+      );
+    case "STOCK_RESTORE_FAILED":
+      return jsonError("No se pudo restaurar el inventario.", code, 500);
+    default:
+      return jsonError("Error interno.", "INTERNAL_ERROR", 500);
+  }
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
@@ -44,82 +101,63 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     return jsonError("Status invalido.", "INVALID_STATUS", 400);
   }
 
+  const cancellationReason =
+    typeof payload.cancellationReason === "string"
+      ? payload.cancellationReason.trim()
+      : "";
+
+  if (payload.status === "cancelado" && !cancellationReason) {
+    return jsonError(
+      "El motivo de cancelacion es obligatorio.",
+      "CANCELLATION_REASON_REQUIRED",
+      400,
+    );
+  }
+
   try {
-    const { data: currentOrder, error: currentOrderError } =
-      await supabaseAdmin
-        .from("orders")
-        .select("id, status, updated_at")
-        .eq("id", id)
-        .maybeSingle();
+    const { data, error } = await supabaseAdmin.rpc("transition_order_status", {
+      p_order_id: id,
+      p_next_status: payload.status,
+      p_changed_by: authResult.user.id,
+      p_cancellation_reason:
+        payload.status === "cancelado" ? cancellationReason : null,
+    });
 
-    if (currentOrderError) {
-      console.error("Failed to load order before status update", {
+    if (error) {
+      const code = getRpcErrorCode(error.message);
+
+      if (code === "INTERNAL_ERROR" || code === "STOCK_RESTORE_FAILED") {
+        console.error("Failed to transition order status through RPC", {
+          orderId: id,
+          status: payload.status,
+          error,
+        });
+      }
+
+      return createRpcErrorResponse(code);
+    }
+
+    const transition = (
+      Array.isArray(data) ? data[0] : data
+    ) as TransitionOrderStatusRow | null;
+
+    if (!transition) {
+      console.error("Order status transition RPC returned no data", {
         orderId: id,
-        error: currentOrderError,
-      });
-
-      return jsonError("Error interno.", "INTERNAL_ERROR", 500);
-    }
-
-    if (!currentOrder) {
-      return jsonError("Pedido no encontrado.", "ORDER_NOT_FOUND", 404);
-    }
-
-    const previousStatus = currentOrder.status as OrderStatus;
-    const nextStatus = payload.status;
-
-    if (previousStatus === nextStatus) {
-      return NextResponse.json({
-        orderId: currentOrder.id as string,
-        status: previousStatus,
-        previousStatus,
-        updatedAt: currentOrder.updated_at as string | null,
-      });
-    }
-
-    const { data: updatedOrder, error: updateOrderError } = await supabaseAdmin
-      .from("orders")
-      .update({ status: nextStatus })
-      .eq("id", id)
-      .select("id, status, updated_at")
-      .single();
-
-    if (updateOrderError) {
-      console.error("Failed to update order status", {
-        orderId: id,
-        status: nextStatus,
-        error: updateOrderError,
-      });
-
-      return jsonError("Error interno.", "INTERNAL_ERROR", 500);
-    }
-
-    const { error: statusHistoryError } = await supabaseAdmin
-      .from("order_status_history")
-      .insert({
-        order_id: id,
-        previous_status: previousStatus,
-        new_status: nextStatus,
-        changed_by: authResult.user.id,
-        notes: "Estado actualizado desde admin MVP",
-      });
-
-    if (statusHistoryError) {
-      console.error("Failed to insert order status history", {
-        orderId: id,
-        previousStatus,
-        status: nextStatus,
-        error: statusHistoryError,
+        status: payload.status,
       });
 
       return jsonError("Error interno.", "INTERNAL_ERROR", 500);
     }
 
     return NextResponse.json({
-      orderId: updatedOrder.id as string,
-      status: updatedOrder.status as OrderStatus,
-      previousStatus,
-      updatedAt: updatedOrder.updated_at as string | null,
+      orderId: transition.order_id,
+      previousStatus: transition.previous_status,
+      status: transition.status,
+      paymentStatus: transition.payment_status,
+      updatedAt: transition.updated_at,
+      canceledAt: transition.canceled_at,
+      stockRestoredAt: transition.stock_restored_at,
     });
   } catch (error) {
     console.error("Unexpected error updating order status", {
