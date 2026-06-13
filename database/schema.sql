@@ -348,6 +348,8 @@ create table public.orders (
   payment_status text not null default 'pending' check (
     payment_status in ('pending', 'paid', 'canceled')
   ),
+  paid_at timestamptz,
+  payment_confirmed_by uuid references auth.users(id),
   subtotal integer not null check (subtotal >= 0),
   delivery_fee integer not null default 0 check (delivery_fee >= 0),
   total integer not null check (total >= 0),
@@ -1003,6 +1005,13 @@ begin
     raise exception 'INVALID_ORDER_TRANSITION';
   end if;
 
+  if v_previous_status = 'en-ruta'
+    and p_next_status = 'entregado'
+    and v_order.payment_status <> 'paid'
+  then
+    raise exception 'PAYMENT_REQUIRED';
+  end if;
+
   if p_next_status = 'cancelado' then
     if nullif(trim(coalesce(p_cancellation_reason, '')), '') is null then
       raise exception 'CANCELLATION_REASON_REQUIRED';
@@ -1169,6 +1178,142 @@ grant execute on function public.transition_order_status(
   text,
   uuid,
   text
+) to service_role;
+
+create or replace function public.transition_order_payment_status(
+  p_order_id uuid,
+  p_next_payment_status text,
+  p_changed_by uuid
+)
+returns table (
+  order_id uuid,
+  status text,
+  previous_payment_status text,
+  payment_status text,
+  paid_at timestamptz,
+  payment_confirmed_by uuid,
+  updated_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_order record;
+  v_previous_payment_status text;
+begin
+  if p_order_id is null
+    or p_changed_by is null
+    or p_next_payment_status is null
+    or p_next_payment_status not in ('pending', 'paid', 'canceled')
+    or not exists (
+      select 1
+      from auth.users u
+      where u.id = p_changed_by
+    )
+  then
+    raise exception 'INVALID_PAYLOAD';
+  end if;
+
+  select
+    o.id,
+    o.status,
+    o.payment_status,
+    o.paid_at,
+    o.payment_confirmed_by,
+    o.updated_at
+  into v_order
+  from public.orders o
+  where o.id = p_order_id
+  for update;
+
+  if not found then
+    raise exception 'ORDER_NOT_FOUND';
+  end if;
+
+  v_previous_payment_status := v_order.payment_status;
+
+  if v_order.status = 'cancelado'
+    and p_next_payment_status = 'paid'
+  then
+    raise exception 'ORDER_CANCELED';
+  end if;
+
+  if v_previous_payment_status = 'paid'
+    and p_next_payment_status = 'paid'
+  then
+    order_id := v_order.id;
+    status := v_order.status;
+    previous_payment_status := v_previous_payment_status;
+    payment_status := v_order.payment_status;
+    paid_at := v_order.paid_at;
+    payment_confirmed_by := v_order.payment_confirmed_by;
+    updated_at := v_order.updated_at;
+    return next;
+    return;
+  end if;
+
+  if not (
+    v_previous_payment_status = 'pending'
+    and p_next_payment_status = 'paid'
+  ) then
+    raise exception 'INVALID_PAYMENT_TRANSITION';
+  end if;
+
+  update public.orders o
+  set
+    payment_status = 'paid',
+    paid_at = now(),
+    payment_confirmed_by = p_changed_by
+  where o.id = p_order_id
+  returning
+    o.id,
+    o.status,
+    o.payment_status,
+    o.paid_at,
+    o.payment_confirmed_by,
+    o.updated_at
+  into
+    v_order.id,
+    v_order.status,
+    v_order.payment_status,
+    v_order.paid_at,
+    v_order.payment_confirmed_by,
+    v_order.updated_at;
+
+  order_id := v_order.id;
+  status := v_order.status;
+  previous_payment_status := v_previous_payment_status;
+  payment_status := v_order.payment_status;
+  paid_at := v_order.paid_at;
+  payment_confirmed_by := v_order.payment_confirmed_by;
+  updated_at := v_order.updated_at;
+  return next;
+end;
+$$;
+
+revoke all on function public.transition_order_payment_status(
+  uuid,
+  text,
+  uuid
+) from public;
+
+revoke all on function public.transition_order_payment_status(
+  uuid,
+  text,
+  uuid
+) from anon;
+
+revoke all on function public.transition_order_payment_status(
+  uuid,
+  text,
+  uuid
+) from authenticated;
+
+grant execute on function public.transition_order_payment_status(
+  uuid,
+  text,
+  uuid
 ) to service_role;
 
 -- RLS
