@@ -94,6 +94,25 @@ La confirmacion registra:
 Tambien se agrego la regla que impide marcar un pedido como entregado mientras
 su pago siga pendiente.
 
+## Ownership digital y Mis Pedidos
+
+Los pedidos incorporaron ownership digital explicito mediante
+`orders.user_id`, una referencia nullable hacia `auth.users`.
+
+El ownership no se determina por telefono, email ni `customer_id`. Los pedidos
+invitados e historicos sin owner permanecen con `user_id = null`.
+
+Se agregaron APIs privadas de solo lectura para listar pedidos propios y
+consultar su detalle. Ambas validan sesion, exigen rol `customer` y filtran por
+`orders.user_id`.
+
+El area de clientes incorporo las vistas `/mi-cuenta/pedidos` y
+`/mi-cuenta/pedidos/[id]`, con listado, detalle, entrega, totales y timeline
+publico. Un pedido ajeno, invitado o inexistente se presenta como no encontrado.
+
+Esta etapa no agrego vinculacion de pedidos invitados ni modifico el checkout
+publico para asociar pedidos a sesiones autenticadas.
+
 ## Expediente digital
 
 El area de clientes evoluciono para incluir:

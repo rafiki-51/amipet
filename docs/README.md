@@ -15,6 +15,7 @@ los dominios funcionales y la operacion del sistema.
 
 - [RPCs transaccionales](./base-de-datos/rpcs.md)
 - [Checkout y pedidos](./dominios/checkout-y-pedidos.md)
+- [Mis Pedidos](./dominios/mis-pedidos.md)
 - [Pagos](./dominios/pagos.md)
 
 ## Estado documental
@@ -27,6 +28,7 @@ DOCS-1A y DOCS-1B reducido establecen la base documental actual:
 - Historia resumida del proyecto.
 - Contratos de RPCs transaccionales.
 - Flujos criticos de checkout, pedidos, stock y pagos.
+- Ownership digital y consulta privada de pedidos del cliente.
 
 Los siguientes documentos estan previstos para fases posteriores:
 

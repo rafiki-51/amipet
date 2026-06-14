@@ -93,6 +93,20 @@ La API responde `201` con:
 10. Registra `stock_deducted_at`.
 11. Retorna la orden creada o el resultado idempotente existente.
 
+## Ownership digital
+
+`orders.user_id` representa la cuenta autenticada autorizada para consultar un
+pedido desde Mis Pedidos.
+
+- Es nullable para mantener checkout invitado.
+- El checkout publico actual no asigna `user_id`.
+- Los pedidos invitados e historicos permanecen con `user_id = null`.
+- Telefono, email y `customer_id` no se utilizan como ownership.
+- Un pedido sin owner digital no aparece en Mis Pedidos.
+
+La consulta privada de pedidos se documenta en
+[Mis Pedidos](./mis-pedidos.md).
+
 ## Idempotencia
 
 La llave de idempotencia identifica un intento logico de checkout.
@@ -257,6 +271,8 @@ Las ordenes historicas sin `stock_deducted_at` no restauran stock.
 - No existe administracion de productos dentro de este flujo.
 - No se documentan aqui RLS, despliegue, monitoreo ni backups.
 - La respuesta publica del checkout no incluye `payment_status`.
+- El checkout publico no vincula automaticamente pedidos a cuentas
+  autenticadas.
 
 ## Fuentes relacionadas
 
@@ -264,5 +280,6 @@ Las ordenes historicas sin `stock_deducted_at` no restauran stock.
 - `src/app/api/admin/orders/route.ts`
 - `src/app/api/admin/orders/[id]/status/route.ts`
 - `database/schema.sql`
+- [Mis Pedidos](./mis-pedidos.md)
 - [RPCs transaccionales](../base-de-datos/rpcs.md)
 - [Pagos](./pagos.md)
