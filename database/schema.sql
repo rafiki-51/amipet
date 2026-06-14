@@ -350,6 +350,17 @@ create table public.orders (
   ),
   paid_at timestamptz,
   payment_confirmed_by uuid references auth.users(id),
+  user_id uuid references auth.users(id) on delete set null,
+  user_linked_at timestamptz,
+  user_link_source text check (
+    user_link_source is null
+    or user_link_source in (
+      'authenticated-checkout',
+      'verified-email-claim',
+      'manual-support',
+      'historical-migration'
+    )
+  ),
   subtotal integer not null check (subtotal >= 0),
   delivery_fee integer not null default 0 check (delivery_fee >= 0),
   total integer not null check (total >= 0),
@@ -363,6 +374,17 @@ create table public.orders (
   cancellation_reason text,
   constraint orders_stock_restoration_requires_deduction_check
     check (stock_restored_at is null or stock_deducted_at is not null),
+  constraint orders_user_link_metadata_coherence_check
+    check (
+      (user_linked_at is null) = (user_link_source is null)
+      and (
+        user_id is null
+        or (
+          user_linked_at is not null
+          and user_link_source is not null
+        )
+      )
+    ),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -378,6 +400,9 @@ create index orders_address_id_idx on public.orders (address_id);
 create index orders_status_idx on public.orders (status);
 create index orders_payment_method_idx on public.orders (payment_method);
 create index orders_created_at_idx on public.orders (created_at desc);
+create index orders_user_id_created_at_id_idx
+on public.orders (user_id, created_at desc, id desc)
+where user_id is not null;
 
 create trigger set_orders_updated_at
 before update on public.orders
