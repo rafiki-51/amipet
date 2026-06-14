@@ -2,6 +2,7 @@ import { createHash } from "crypto";
 import { NextResponse } from "next/server";
 import { paymentMethods } from "@/config/payment";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 
 type CreateOrderPayload = {
   customer?: {
@@ -277,6 +278,47 @@ export async function POST(request: Request) {
     items: normalizedItems,
   });
 
+  let checkoutUserId: string | null = null;
+
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError && authError.name !== "AuthSessionMissingError") {
+      console.error("Failed to resolve checkout authentication", authError);
+      return jsonError("Error interno.", "INTERNAL_ERROR", 500);
+    }
+
+    if (user) {
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error("Failed to validate checkout customer profile", profileError);
+        return jsonError("Error interno.", "INTERNAL_ERROR", 500);
+      }
+
+      if (!profile || profile.role !== "customer") {
+        return jsonError(
+          "Esta cuenta no puede realizar pedidos como cliente.",
+          "FORBIDDEN",
+          403,
+        );
+      }
+
+      checkoutUserId = user.id;
+    }
+  } catch (error) {
+    console.error("Unexpected error resolving checkout authentication", error);
+    return jsonError("Error interno.", "INTERNAL_ERROR", 500);
+  }
+
   try {
     const { data, error } = await supabaseAdmin.rpc("create_checkout_order", {
       p_customer_name: name,
@@ -289,6 +331,7 @@ export async function POST(request: Request) {
       p_idempotency_key: idempotencyKey,
       p_idempotency_payload_hash: idempotencyPayloadHash,
       p_items: normalizedItems,
+      p_user_id: checkoutUserId,
     });
 
     if (error) {

@@ -556,7 +556,8 @@ create or replace function public.create_checkout_order(
   p_notes text,
   p_idempotency_key text,
   p_idempotency_payload_hash text,
-  p_items jsonb
+  p_items jsonb,
+  p_user_id uuid default null
 )
 returns table (
   order_id uuid,
@@ -608,6 +609,18 @@ begin
     raise exception 'INVALID_PAYLOAD';
   end if;
 
+  if p_user_id is not null
+    and not exists (
+      select 1
+      from auth.users u
+      join public.profiles pr on pr.id = u.id
+      where u.id = p_user_id
+        and pr.role = 'customer'
+    )
+  then
+    raise exception 'INVALID_ORDER_OWNER';
+  end if;
+
   -- Serialize concurrent retries that use the same idempotency key.
   perform pg_advisory_xact_lock(hashtextextended(p_idempotency_key, 0));
 
@@ -618,14 +631,17 @@ begin
     o.subtotal,
     o.delivery_fee,
     o.total,
-    o.idempotency_payload_hash
+    o.idempotency_payload_hash,
+    o.user_id
   into v_existing_order
   from public.orders o
   where o.idempotency_key = p_idempotency_key
   limit 1;
 
   if found then
-    if v_existing_order.idempotency_payload_hash is distinct from p_idempotency_payload_hash then
+    if v_existing_order.idempotency_payload_hash is distinct from p_idempotency_payload_hash
+      or v_existing_order.user_id is distinct from p_user_id
+    then
       raise exception 'IDEMPOTENCY_CONFLICT';
     end if;
 
@@ -775,6 +791,9 @@ begin
       status,
       payment_method,
       payment_status,
+      user_id,
+      user_linked_at,
+      user_link_source,
       subtotal,
       delivery_fee,
       total,
@@ -789,6 +808,9 @@ begin
       'recibido',
       p_payment_method,
       'pending',
+      p_user_id,
+      case when p_user_id is not null then now() else null end,
+      case when p_user_id is not null then 'authenticated-checkout' else null end,
       v_subtotal,
       v_delivery_zone.delivery_fee,
       v_total,
@@ -806,13 +828,17 @@ begin
         o.subtotal,
         o.delivery_fee,
         o.total,
-        o.idempotency_payload_hash
+        o.idempotency_payload_hash,
+        o.user_id
       into v_existing_order
       from public.orders o
       where o.idempotency_key = p_idempotency_key
       limit 1;
 
-      if found and v_existing_order.idempotency_payload_hash = p_idempotency_payload_hash then
+      if found
+        and v_existing_order.idempotency_payload_hash = p_idempotency_payload_hash
+        and v_existing_order.user_id is not distinct from p_user_id
+      then
         order_id := v_existing_order.id;
         order_number := v_existing_order.order_number;
         status := v_existing_order.status;
@@ -904,7 +930,8 @@ revoke all on function public.create_checkout_order(
   text,
   text,
   text,
-  jsonb
+  jsonb,
+  uuid
 ) from public;
 
 revoke all on function public.create_checkout_order(
@@ -917,7 +944,8 @@ revoke all on function public.create_checkout_order(
   text,
   text,
   text,
-  jsonb
+  jsonb,
+  uuid
 ) from anon;
 
 revoke all on function public.create_checkout_order(
@@ -930,7 +958,8 @@ revoke all on function public.create_checkout_order(
   text,
   text,
   text,
-  jsonb
+  jsonb,
+  uuid
 ) from authenticated;
 
 grant execute on function public.create_checkout_order(
@@ -943,7 +972,8 @@ grant execute on function public.create_checkout_order(
   text,
   text,
   text,
-  jsonb
+  jsonb,
+  uuid
 ) to service_role;
 
 create or replace function public.transition_order_status(
