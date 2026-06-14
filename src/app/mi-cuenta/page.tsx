@@ -119,23 +119,39 @@ export default async function MiCuentaPage() {
             </dl>
           </article>
 
-          <aside className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold tracking-tight">Mis mascotas</h2>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
-              Consulta y administra los perfiles de tus mascotas desde un solo
-              lugar.
-            </p>
-            <Link
-              href="/mi-cuenta/mascotas"
-              className="mt-6 inline-flex w-full justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
-            >
-              Ir a mis mascotas
-            </Link>
-            <p className="mt-3 text-xs leading-5 text-slate-500">
-              Cada mascota tiene su propio expediente digital para seguimiento
-              de salud y cuidado.
-            </p>
-          </aside>
+          <div className="grid gap-5">
+            <aside className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h2 className="text-xl font-bold tracking-tight">Mis pedidos</h2>
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                Consulta el estado y detalle de los pedidos vinculados a tu
+                cuenta.
+              </p>
+              <Link
+                href="/mi-cuenta/pedidos"
+                className="mt-6 inline-flex w-full justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
+              >
+                Ir a mis pedidos
+              </Link>
+            </aside>
+
+            <aside className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h2 className="text-xl font-bold tracking-tight">Mis mascotas</h2>
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                Consulta y administra los perfiles de tus mascotas desde un
+                solo lugar.
+              </p>
+              <Link
+                href="/mi-cuenta/mascotas"
+                className="mt-6 inline-flex w-full justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-100"
+              >
+                Ir a mis mascotas
+              </Link>
+              <p className="mt-3 text-xs leading-5 text-slate-500">
+                Cada mascota tiene su propio expediente digital para seguimiento
+                de salud y cuidado.
+              </p>
+            </aside>
+          </div>
         </section>
       </div>
     </main>
