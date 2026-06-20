@@ -1,9 +1,9 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { requireCustomerActionUser } from "@/lib/auth/customer-actions";
 import { createClient } from "@/lib/supabase/server";
 
-const adminRoles = new Set(["admin", "operator"]);
 const allowedStatuses = new Set(["applied", "scheduled", "skipped"]);
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -108,38 +108,10 @@ function getTodayUtc() {
 }
 
 async function requireCustomerUser(redirectPath: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect(`/login?redirect=${redirectPath}`);
-  }
-
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (profileError) {
-    console.error(
-      "Failed to validate pet vaccination owner profile",
-      profileError,
-    );
-    return { supabase, user, profile: null, profileError };
-  }
-
-  if (profile && adminRoles.has(profile.role as string)) {
-    redirect("/admin/pedidos");
-  }
-
-  if (!profile || profile.role !== "customer") {
-    redirect("/login");
-  }
-
-  return { supabase, user, profile, profileError: null };
+  return requireCustomerActionUser({
+    redirectPath,
+    profileErrorLogMessage: "Failed to validate pet vaccination owner profile",
+  });
 }
 
 async function requireActiveOwnedPet(
