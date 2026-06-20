@@ -8,12 +8,14 @@ los dominios funcionales y la operacion del sistema.
 
 - [Configuracion inicial](./setup-inicial.md)
 - [Vision general de arquitectura](./arquitectura/vision-general.md)
+- [Autenticacion y seguridad](./arquitectura/autenticacion-y-seguridad.md)
 - [Migraciones de base de datos](./base-de-datos/migraciones.md)
 - [Evolucion del proyecto](./historial/evolucion-del-proyecto.md)
 
 ## Dominios criticos
 
 - [RPCs transaccionales](./base-de-datos/rpcs.md)
+- [Row Level Security](./base-de-datos/rls.md)
 - [Checkout y pedidos](./dominios/checkout-y-pedidos.md)
 - [Mis Pedidos](./dominios/mis-pedidos.md)
 - [Pagos](./dominios/pagos.md)
@@ -27,6 +29,8 @@ DOCS-1A y DOCS-1B reducido establecen la base documental actual:
 - Reglas generales para migraciones.
 - Historia resumida del proyecto.
 - Contratos de RPCs transaccionales.
+- Matriz de roles, helpers de autenticacion y seguridad aplicada.
+- Estado actual de RLS y hallazgos conocidos.
 - Flujos criticos de checkout, pedidos, stock y pagos.
 - Ownership digital y consulta privada de pedidos del cliente.
 
@@ -35,11 +39,9 @@ Los siguientes documentos estan previstos para fases posteriores:
 ```text
 docs/
 |-- arquitectura/
-|   |-- autenticacion-y-seguridad.md
 |   `-- variables-de-entorno.md
 |-- base-de-datos/
-|   |-- modelo-de-datos.md
-|   `-- rls.md
+|   `-- modelo-de-datos.md
 |-- dominios/
 |   `-- expediente-digital.md
 `-- operaciones/
