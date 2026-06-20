@@ -7,11 +7,13 @@ import { createClient } from "@/lib/supabase/server";
 type RequireCustomerPageUserOptions = {
   redirectPath: string;
   profileErrorLogMessage: string;
+  unauthenticatedRedirectPath?: string;
 };
 
 export async function requireCustomerPageUser({
   redirectPath,
   profileErrorLogMessage,
+  unauthenticatedRedirectPath,
 }: RequireCustomerPageUserOptions) {
   const supabase = await createClient();
   const {
@@ -19,7 +21,7 @@ export async function requireCustomerPageUser({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect(`/login?redirect=${redirectPath}`);
+    redirect(unauthenticatedRedirectPath ?? `/login?redirect=${redirectPath}`);
   }
 
   const { data: profile, error: profileError } = await supabase
