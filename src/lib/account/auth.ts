@@ -1,7 +1,8 @@
 import "server-only";
 
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { isCustomerRole } from "@/lib/auth/roles";
+import { getAuthenticatedUserRole } from "@/lib/auth/server";
 
 type CustomerApiUserResult =
   | {
@@ -14,25 +15,16 @@ type CustomerApiUserResult =
     };
 
 export async function getCustomerApiUser(): Promise<CustomerApiUserResult> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const authResult = await getAuthenticatedUserRole();
 
-  if (!user) {
+  if (authResult.status === "unauthenticated") {
     return {
       response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
     };
   }
 
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (error) {
-    console.error("Failed to validate customer API profile", error);
+  if (authResult.status === "profile-error") {
+    console.error("Failed to validate customer API profile", authResult.error);
 
     return {
       response: NextResponse.json(
@@ -42,11 +34,14 @@ export async function getCustomerApiUser(): Promise<CustomerApiUserResult> {
     };
   }
 
-  if (!profile || profile.role !== "customer") {
+  if (
+    authResult.status !== "authenticated" ||
+    !isCustomerRole(authResult.role)
+  ) {
     return {
       response: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
     };
   }
 
-  return { user: { id: user.id } };
+  return { user: authResult.user };
 }

@@ -2,7 +2,7 @@ import "server-only";
 
 import { NextResponse } from "next/server";
 import { isAdminRole } from "@/lib/auth/roles";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedUserRole } from "@/lib/auth/server";
 
 type AdminApiUserResult =
   | {
@@ -15,34 +15,28 @@ type AdminApiUserResult =
     };
 
 export async function getAdminApiUser(): Promise<AdminApiUserResult> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const authResult = await getAuthenticatedUserRole();
 
-  if (!user) {
+  if (authResult.status === "unauthenticated") {
     return {
       response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
     };
   }
 
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (error) {
-    console.error("Failed to validate admin API profile", error);
+  if (authResult.status === "profile-error") {
+    console.error("Failed to validate admin API profile", authResult.error);
   }
 
-  if (error || !profile || !isAdminRole(profile.role)) {
+  if (
+    authResult.status !== "authenticated" ||
+    !isAdminRole(authResult.role)
+  ) {
     return {
       response: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
     };
   }
 
-  return { user };
+  return { user: authResult.user };
 }
 
 export async function requireAdminApiSession() {
