@@ -16,7 +16,20 @@ import type { OrderStatus } from "@/types/order";
 
 type AdminOrdersResponse = {
   orders?: AdminOrder[];
+  pagination?: AdminOrdersPagination;
+  filterOptions?: {
+    zones?: string[];
+  };
   error?: string;
+};
+
+type AdminOrdersPagination = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
 };
 
 type StatusUpdateResponse = {
@@ -44,7 +57,17 @@ const initialFilters = {
   status: "todos",
   district: "todas",
   paymentMethod: "todos",
+  paymentStatus: "todos",
 } satisfies OrderFilterState;
+
+const defaultPagination: AdminOrdersPagination = {
+  page: 1,
+  limit: 25,
+  total: 0,
+  totalPages: 1,
+  hasNextPage: false,
+  hasPreviousPage: false,
+};
 
 const validStatuses = new Set<string>(orderStatuses);
 
@@ -68,6 +91,10 @@ export function AdminPedidosClient() {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [filters, setFilters] = useState<OrderFilterState>(initialFilters);
+  const [zones, setZones] = useState<string[]>([]);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] =
+    useState<AdminOrdersPagination>(defaultPagination);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
@@ -78,7 +105,28 @@ export function AdminPedidosClient() {
     setError(null);
 
     try {
-      const response = await fetch("/api/admin/orders", {
+      const searchParams = new URLSearchParams({
+        page: String(page),
+        limit: String(pagination.limit),
+      });
+
+      if (filters.status !== "todos") {
+        searchParams.set("status", filters.status);
+      }
+
+      if (filters.paymentMethod !== "todos") {
+        searchParams.set("paymentMethod", filters.paymentMethod);
+      }
+
+      if (filters.paymentStatus !== "todos") {
+        searchParams.set("paymentStatus", filters.paymentStatus);
+      }
+
+      if (filters.district !== "todas") {
+        searchParams.set("zone", filters.district);
+      }
+
+      const response = await fetch(`/api/admin/orders?${searchParams}`, {
         cache: "no-store",
       });
 
@@ -90,6 +138,8 @@ export function AdminPedidosClient() {
 
       const nextOrders = sortOrdersByNewest(payload.orders ?? []);
       setOrders(nextOrders);
+      setPagination(payload.pagination ?? defaultPagination);
+      setZones(payload.filterOptions?.zones ?? []);
       setSelectedOrderId((currentId) => {
         if (currentId && nextOrders.some((order) => order.id === currentId)) {
           return currentId;
@@ -103,45 +153,28 @@ export function AdminPedidosClient() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [filters, page, pagination.limit]);
 
   useEffect(() => {
     void fetchOrders();
   }, [fetchOrders]);
 
-  const zones = useMemo(
-    () =>
-      Array.from(new Set(orders.map((order) => order.delivery.zoneName).filter(Boolean))).sort(
-        (a, b) => a.localeCompare(b, "es-CR"),
-      ),
-    [orders],
-  );
-
-  const filteredOrders = useMemo(() => {
-    return orders.filter((order) => {
-      const matchesStatus =
-        filters.status === "todos" || order.status === filters.status;
-      const matchesDistrict =
-        filters.district === "todas" || order.delivery.zoneName === filters.district;
-      const matchesPayment =
-        filters.paymentMethod === "todos" ||
-        order.paymentMethod === filters.paymentMethod;
-
-      return matchesStatus && matchesDistrict && matchesPayment;
-    });
-  }, [filters, orders]);
-
   const selectedOrder = useMemo(() => {
     if (!selectedOrderId) {
-      return filteredOrders[0] ?? null;
+      return orders[0] ?? null;
     }
 
     return (
-      filteredOrders.find((order) => order.id === selectedOrderId) ??
       orders.find((order) => order.id === selectedOrderId) ??
       null
     );
-  }, [filteredOrders, orders, selectedOrderId]);
+  }, [orders, selectedOrderId]);
+
+  function handleFiltersChange(nextFilters: OrderFilterState) {
+    setFilters(nextFilters);
+    setPage(1);
+    setSelectedOrderId(null);
+  }
 
   const handleStatusChange = async (
     orderId: string,
@@ -174,24 +207,8 @@ export function AdminPedidosClient() {
         throw new Error(payload.error ?? "No se pudo actualizar el estado.");
       }
 
-      const updatedStatus = payload.status;
-      const updatedPaymentStatus = payload.paymentStatus;
-
-      setOrders((currentOrders) =>
-        sortOrdersByNewest(
-          currentOrders.map((order) =>
-            order.id === payload.orderId
-              ? {
-                  ...order,
-                  status: updatedStatus,
-                  paymentStatus: updatedPaymentStatus,
-                  updatedAt: payload.updatedAt ?? order.updatedAt,
-                }
-              : order,
-          ),
-        ),
-      );
       setSelectedOrderId(orderId);
+      await fetchOrders();
     } catch (statusError) {
       console.error(statusError);
       setError(
@@ -233,27 +250,8 @@ export function AdminPedidosClient() {
         throw new Error(payload.error ?? "No se pudo confirmar el pago.");
       }
 
-      const updatedStatus = payload.status;
-      const updatedPaymentStatus = payload.paymentStatus;
-
-      setOrders((currentOrders) =>
-        sortOrdersByNewest(
-          currentOrders.map((order) =>
-            order.id === payload.orderId
-              ? {
-                  ...order,
-                  status: updatedStatus,
-                  paymentStatus: updatedPaymentStatus,
-                  paidAt: payload.paidAt ?? order.paidAt,
-                  paymentConfirmedBy:
-                    payload.paymentConfirmedBy ?? order.paymentConfirmedBy,
-                  updatedAt: payload.updatedAt ?? order.updatedAt,
-                }
-              : order,
-          ),
-        ),
-      );
       setSelectedOrderId(orderId);
+      await fetchOrders();
     } catch (paymentError) {
       console.error(paymentError);
       setError(
@@ -266,7 +264,8 @@ export function AdminPedidosClient() {
     }
   };
 
-  const totalOrders = orders.length;
+  const totalOrders = pagination.total;
+  const pageOrders = orders.length;
   const receivedOrders = orders.filter((order) => order.status === "recibido").length;
   const preparingOrders = orders.filter((order) => order.status === "preparando").length;
   const deliveredOrders = orders.filter((order) => order.status === "entregado").length;
@@ -304,31 +303,35 @@ export function AdminPedidosClient() {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2">
             <div className="rounded-2xl border border-slate-200 bg-white p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Total
+                Total filtrado
               </p>
               <p className="mt-2 text-2xl font-bold text-slate-950">{totalOrders}</p>
             </div>
             <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">
-                Pendientes
+                Pendientes pagina
               </p>
               <p className="mt-2 text-2xl font-bold text-amber-800">{receivedOrders}</p>
             </div>
             <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
-                Preparando
+                Preparando pagina
               </p>
               <p className="mt-2 text-2xl font-bold text-sky-800">{preparingOrders}</p>
             </div>
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
-                Entregados
+                Entregados pagina
               </p>
               <p className="mt-2 text-2xl font-bold text-emerald-800">{deliveredOrders}</p>
             </div>
           </div>
 
-          <OrderFilters filters={filters} zones={zones} onChange={setFilters} />
+          <OrderFilters
+            filters={filters}
+            zones={zones}
+            onChange={handleFiltersChange}
+          />
 
           {error ? (
             <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -341,8 +344,8 @@ export function AdminPedidosClient() {
               <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
                 Cargando pedidos...
               </div>
-            ) : filteredOrders.length > 0 ? (
-              filteredOrders.map((order) => (
+            ) : orders.length > 0 ? (
+              orders.map((order) => (
                 <OrderCard
                   key={order.id}
                   order={order}
@@ -355,6 +358,31 @@ export function AdminPedidosClient() {
                 No hay pedidos que coincidan con los filtros actuales.
               </div>
             )}
+          </div>
+
+          <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+            <p>
+              Pagina {pagination.page} de {pagination.totalPages} ·{" "}
+              {pageOrders} pedidos en esta pagina
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={loading || !pagination.hasPreviousPage}
+                onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
+                className="rounded-full border border-slate-300 px-4 py-2 font-semibold text-slate-700 transition hover:border-emerald-400 hover:text-emerald-700 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+              >
+                Anterior
+              </button>
+              <button
+                type="button"
+                disabled={loading || !pagination.hasNextPage}
+                onClick={() => setPage((currentPage) => currentPage + 1)}
+                className="rounded-full border border-slate-300 px-4 py-2 font-semibold text-slate-700 transition hover:border-emerald-400 hover:text-emerald-700 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+              >
+                Siguiente
+              </button>
+            </div>
           </div>
         </div>
 

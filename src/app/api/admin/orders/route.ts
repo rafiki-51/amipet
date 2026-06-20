@@ -2,8 +2,12 @@ import { NextResponse } from "next/server";
 import { requireAdminApiSession } from "@/lib/admin/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import type { AdminOrder } from "@/types/admin-order";
-import type { PaymentMethodId } from "@/config/payment";
-import type { PaymentStatus } from "@/config/payment-status";
+import { paymentMethods, type PaymentMethodId } from "@/config/payment";
+import {
+  paymentStatuses,
+  type PaymentStatus,
+} from "@/config/payment-status";
+import { orderStatuses } from "@/config/orders";
 import type { OrderStatus } from "@/types/order";
 
 type OrderItemRow = {
@@ -69,6 +73,28 @@ type OrderRow = {
   order_items: OrderItemRow[] | null;
 };
 
+type AdminOrdersPagination = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+};
+
+type DeliveryZoneRow = {
+  name: string;
+};
+
+const DEFAULT_PAGE = 1;
+const DEFAULT_LIMIT = 25;
+const MAX_LIMIT = 50;
+const validOrderStatuses = new Set<string>(orderStatuses);
+const validPaymentStatuses = new Set<string>(paymentStatuses);
+const validPaymentMethods = new Set<string>(
+  paymentMethods.map((method) => method.id),
+);
+
 function firstOrNull<T>(value: T | T[] | null | undefined) {
   if (Array.isArray(value)) {
     return value[0] ?? null;
@@ -117,15 +143,93 @@ function mapOrderRowToAdminOrder(row: OrderRow): AdminOrder {
   };
 }
 
-export async function GET() {
+function parsePositiveInteger(value: string | null, fallback: number) {
+  if (!value) {
+    return fallback;
+  }
+
+  const parsed = Number(value);
+
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    return null;
+  }
+
+  return parsed;
+}
+
+function createPagination(
+  page: number,
+  limit: number,
+  total: number,
+): AdminOrdersPagination {
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+
+  return {
+    page,
+    limit,
+    total,
+    totalPages,
+    hasNextPage: page < totalPages,
+    hasPreviousPage: page > 1,
+  };
+}
+
+export async function GET(request: Request) {
   const authResponse = await requireAdminApiSession();
 
   if (authResponse) {
     return authResponse;
   }
 
+  const { searchParams } = new URL(request.url);
+  const parsedPage = parsePositiveInteger(
+    searchParams.get("page"),
+    DEFAULT_PAGE,
+  );
+  const parsedLimit = parsePositiveInteger(
+    searchParams.get("limit"),
+    DEFAULT_LIMIT,
+  );
+
+  if (parsedPage === null || parsedLimit === null) {
+    return NextResponse.json(
+      { error: "Parametros de paginacion invalidos." },
+      { status: 400 },
+    );
+  }
+
+  const page = parsedPage;
+  const limit = Math.min(parsedLimit, MAX_LIMIT);
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
+  const status = searchParams.get("status");
+  const paymentStatus = searchParams.get("paymentStatus");
+  const paymentMethod = searchParams.get("paymentMethod");
+  const zone = searchParams.get("zone");
+
+  if (status && !validOrderStatuses.has(status)) {
+    return NextResponse.json(
+      { error: "Filtro de estado invalido." },
+      { status: 400 },
+    );
+  }
+
+  if (paymentStatus && !validPaymentStatuses.has(paymentStatus)) {
+    return NextResponse.json(
+      { error: "Filtro de pago invalido." },
+      { status: 400 },
+    );
+  }
+
+  if (paymentMethod && !validPaymentMethods.has(paymentMethod)) {
+    return NextResponse.json(
+      { error: "Filtro de metodo de pago invalido." },
+      { status: 400 },
+    );
+  }
+
   try {
-    const { data, error } = await supabaseAdmin
+    let query = supabaseAdmin
       .from("orders")
       .select(
         `
@@ -147,10 +251,10 @@ export async function GET() {
             name,
             phone
           ),
-          addresses (
+          addresses!inner (
             address,
             delivery_references,
-            delivery_zones (
+            delivery_zones!inner (
               name
             )
           ),
@@ -163,8 +267,30 @@ export async function GET() {
             subtotal
           )
         `,
+        { count: "exact" },
       )
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false });
+
+    if (status) {
+      query = query.eq("status", status);
+    }
+
+    if (paymentStatus) {
+      query = query.eq("payment_status", paymentStatus);
+    }
+
+    if (paymentMethod) {
+      query = query.eq("payment_method", paymentMethod);
+    }
+
+    if (zone) {
+      query = query.eq("addresses.delivery_zones.name", zone);
+    }
+
+    query = query.range(from, to);
+
+    const { data, error, count } = await query;
 
     if (error) {
       console.error("Failed to load admin orders", error);
@@ -178,8 +304,28 @@ export async function GET() {
     const orders = ((data ?? []) as unknown as OrderRow[]).map(
       mapOrderRowToAdminOrder,
     );
+    const pagination = createPagination(page, limit, count ?? 0);
+    const { data: zoneRows, error: zonesError } = await supabaseAdmin
+      .from("delivery_zones")
+      .select("name")
+      .eq("is_active", true)
+      .order("name", { ascending: true });
 
-    return NextResponse.json({ orders });
+    if (zonesError) {
+      console.error("Failed to load admin order zone filters", zonesError);
+    }
+
+    const zones = ((zoneRows ?? []) as DeliveryZoneRow[])
+      .map((deliveryZone) => deliveryZone.name)
+      .filter(Boolean);
+
+    return NextResponse.json({
+      orders,
+      pagination,
+      filterOptions: {
+        zones,
+      },
+    });
   } catch (error) {
     console.error("Unexpected error loading admin orders", error);
 

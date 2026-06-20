@@ -1,12 +1,18 @@
 import { getOrderStatusLabel } from "@/components/admin/OrderStatusBadge";
 import { orderStatuses } from "@/config/orders";
 import { paymentMethods, type PaymentMethodId } from "@/config/payment";
+import {
+  paymentStatusLabels,
+  paymentStatuses,
+  type PaymentStatus,
+} from "@/config/payment-status";
 import type { OrderStatus } from "@/types/order";
 
 export type OrderFilterState = {
   status: OrderStatus | "todos";
   district: string;
   paymentMethod: PaymentMethodId | "todos";
+  paymentStatus: PaymentStatus | "todos";
 };
 
 type OrderFiltersProps = {
@@ -17,7 +23,7 @@ type OrderFiltersProps = {
 
 export function OrderFilters({ filters, zones, onChange }: OrderFiltersProps) {
   return (
-    <section className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-3">
+    <section className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-2">
       <label className="block">
         <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
           Estado
@@ -66,7 +72,7 @@ export function OrderFilters({ filters, zones, onChange }: OrderFiltersProps) {
 
       <label className="block">
         <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-          Pago
+          Metodo
         </span>
         <select
           value={filters.paymentMethod}
@@ -83,6 +89,30 @@ export function OrderFilters({ filters, zones, onChange }: OrderFiltersProps) {
           {paymentMethods.map((method) => (
             <option key={method.id} value={method.id}>
               {method.label}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="block">
+        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+          Pago
+        </span>
+        <select
+          value={filters.paymentStatus}
+          onChange={(event) =>
+            onChange({
+              ...filters,
+              paymentStatus: event.target
+                .value as OrderFilterState["paymentStatus"],
+            })
+          }
+          className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+        >
+          <option value="todos">Todos</option>
+          {paymentStatuses.map((status) => (
+            <option key={status} value={status}>
+              {paymentStatusLabels[status]}
             </option>
           ))}
         </select>
