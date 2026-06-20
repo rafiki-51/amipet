@@ -2,33 +2,49 @@
 
 ## Objetivo
 
-Amipet concentra las operaciones criticas de pedidos, stock y pagos en
-funciones PostgreSQL. Esto permite validar reglas, bloquear filas y ejecutar
-todos los cambios relacionados dentro de una sola transaccion.
+Amipet concentra las operaciones criticas de pedidos, stock, pagos y
+vinculacion manual de ownership en funciones PostgreSQL. Esto permite validar
+reglas, bloquear filas y ejecutar cambios relacionados dentro de una misma
+transaccion.
 
-Las APIs de Next.js validan y traducen solicitudes HTTP, pero PostgreSQL es la
-autoridad final para estas operaciones.
+Las APIs de Next.js validan solicitudes HTTP, sesion y rol. PostgreSQL es la
+autoridad final para reglas transaccionales.
 
 ## Seguridad y permisos
 
-Las tres RPCs documentadas aqui:
+Las RPCs criticas actuales:
 
 - Utilizan `SECURITY DEFINER`.
 - Fijan `search_path = public`.
 - Revocan ejecucion a `public`, `anon` y `authenticated`.
 - Conceden ejecucion solamente a `service_role`.
 
-Por esta razon, deben llamarse exclusivamente desde codigo server-side despues
-de aplicar las validaciones y autorizaciones correspondientes.
+Por esta razon, solo deben llamarse desde codigo server-side despues de aplicar
+las validaciones correspondientes.
 
-La referencia consolidada actual es `database/schema.sql`.
+Referencia consolidada: `database/schema.sql`.
+
+## Flujo de autorizacion
+
+- Checkout: `POST /api/orders` valida payload, rate limit y sesion opcional. Si
+  hay sesion `customer`, pasa `p_user_id`; si no hay sesion, pasa `null`.
+- Admin status: `PATCH /api/admin/orders/[id]/status` exige rol `admin` u
+  `operator` antes de llamar `transition_order_status()`.
+- Admin pago: `PATCH /api/admin/orders/[id]/payment-status` exige rol `admin`
+  u `operator` antes de llamar `transition_order_payment_status()`.
+- Vinculacion manual: `POST /api/admin/orders/[id]/link-customer` exige rol
+  `admin` u `operator` antes de llamar `link_order_to_customer_manual()`.
+
+Las RPCs administrativas validan que `p_changed_by` exista en `auth.users`.
+La validacion de rol admin/operator ocurre actualmente en las APIs.
 
 ## `public.create_checkout_order()`
 
 ### Responsabilidad
 
-Crea un pedido completo desde checkout, mantiene idempotencia y descuenta stock
-de forma atomica.
+Crea un pedido completo desde checkout, mantiene idempotencia, descuenta stock
+de forma atomica y, cuando corresponde, vincula el pedido a una cuenta customer
+autenticada.
 
 ### Firma
 
@@ -43,7 +59,8 @@ public.create_checkout_order(
   p_notes text,
   p_idempotency_key text,
   p_idempotency_payload_hash text,
-  p_items jsonb
+  p_items jsonb,
+  p_user_id uuid default null
 )
 ```
 
@@ -58,46 +75,72 @@ public.create_checkout_order(
 | `delivery_fee` | `integer` |
 | `total` | `integer` |
 
+### Ownership autenticado
+
+Si `p_user_id` viene con valor, la RPC valida que:
+
+- Exista en `auth.users`.
+- Exista profile en `public.profiles`.
+- `profiles.role = 'customer'`.
+
+Si la validacion falla, lanza `INVALID_ORDER_OWNER`.
+
+Cuando `p_user_id` es valido, el pedido nace con:
+
+```text
+user_id = p_user_id
+user_linked_at = now()
+user_link_source = 'authenticated-checkout'
+```
+
+Cuando `p_user_id` es `null`, el pedido queda como invitado:
+
+```text
+user_id = null
+user_linked_at = null
+user_link_source = null
+```
+
+### Idempotencia y ownership
+
+La RPC compara hash de payload y ownership:
+
+```text
+existing_order.user_id IS NOT DISTINCT FROM p_user_id
+```
+
+Esto evita que un reintento convierta un pedido invitado en autenticado,
+autenticado en invitado o transfiera ownership entre usuarios.
+
 ### Flujo transaccional
 
-1. Valida campos obligatorios, metodo de pago e items.
-2. Obtiene un advisory lock transaccional por `p_idempotency_key`.
-3. Busca un pedido existente con la misma llave.
-4. Si existe con el mismo hash, retorna ese pedido sin volver a descontar
-   stock.
-5. Si existe con un hash diferente, lanza `IDEMPOTENCY_CONFLICT`.
-6. Normaliza cantidades repetidas por producto y aplica un maximo total de 99
-   unidades por producto.
-7. Valida la zona de entrega activa.
-8. Bloquea productos en orden determinista mediante `FOR UPDATE`.
-9. Valida existencia, actividad y stock suficiente bajo bloqueo.
-10. Calcula precios y totales desde la base de datos.
-11. Crea cliente cuando corresponde, direccion, pedido e items.
+1. Valida campos obligatorios, metodo de pago, items y owner opcional.
+2. Obtiene advisory lock por `p_idempotency_key`.
+3. Busca pedido existente con la misma llave.
+4. Si existe con mismo hash y mismo owner, retorna ese pedido.
+5. Si existe con hash u owner distinto, lanza `IDEMPOTENCY_CONFLICT`.
+6. Normaliza cantidades repetidas por producto.
+7. Valida zona de entrega activa.
+8. Bloquea productos en orden determinista con `FOR UPDATE`.
+9. Valida existencia, actividad y stock suficiente.
+10. Calcula precios y totales desde PostgreSQL.
+11. Crea cliente, direccion, pedido e items.
 12. Crea el pedido con `status = 'recibido'` y
     `payment_status = 'pending'`.
-13. Descuenta el stock y verifica que todos los productos fueron actualizados.
+13. Descuenta stock y verifica que todos los productos fueron actualizados.
 14. Registra `stock_deducted_at`.
-15. Inserta el historial inicial del pedido.
-
-Si cualquier paso falla, PostgreSQL revierte la transaccion completa. No deben
-quedar pedidos, items ni descuentos parciales.
+15. Inserta historial inicial del pedido.
 
 ### Errores estables
 
 | Error | Significado |
 |---|---|
-| `INVALID_PAYLOAD` | El payload o alguna cantidad no cumple el contrato. |
-| `IDEMPOTENCY_CONFLICT` | La llave ya fue utilizada con un payload diferente. |
-| `DELIVERY_ZONE_NOT_FOUND` | La zona no existe o no esta activa. |
-| `PRODUCT_NOT_FOUND` | Un producto no existe o no esta activo. |
-| `INSUFFICIENT_STOCK` | Al menos un producto no tiene stock suficiente. |
-
-### Limitaciones
-
-- No crea reservas temporales.
-- No procesa ni confirma pagos.
-- No restaura stock; la restauracion pertenece al flujo de cancelacion.
-- No devuelve `payment_status` en su respuesta publica actual.
+| `INVALID_PAYLOAD` | Payload invalido. |
+| `INVALID_ORDER_OWNER` | `p_user_id` no existe o no es customer. |
+| `IDEMPOTENCY_CONFLICT` | Llave usada con payload u owner distinto. |
+| `DELIVERY_ZONE_NOT_FOUND` | Zona inexistente o inactiva. |
+| `PRODUCT_NOT_FOUND` | Producto inexistente o inactivo. |
+| `INSUFFICIENT_STOCK` | Stock insuficiente. |
 
 ## `public.transition_order_status()`
 
@@ -117,7 +160,7 @@ public.transition_order_status(
 )
 ```
 
-`p_changed_by` debe corresponder a un usuario existente en `auth.users`.
+`p_changed_by` debe existir en `auth.users`.
 
 ### Retorno
 
@@ -141,17 +184,7 @@ public.transition_order_status(
 | `entregado` | Ninguno |
 | `cancelado` | Ninguno |
 
-Solicitar el mismo estado actual es idempotente: retorna la orden sin insertar
-otro historial ni repetir efectos secundarios.
-
-### Flujo general
-
-1. Valida payload, estado solicitado y usuario.
-2. Bloquea la orden mediante `FOR UPDATE`.
-3. Valida la transicion.
-4. Bloquea `en-ruta -> entregado` si `payment_status <> 'paid'`.
-5. Actualiza el pedido.
-6. Inserta `order_status_history` dentro de la misma transaccion.
+Solicitar el mismo estado actual es idempotente.
 
 ### Cancelacion y stock
 
@@ -163,35 +196,27 @@ Una cancelacion:
 - Registra `canceled_at` y `cancellation_reason`.
 - Restaura stock solo si `stock_deducted_at` tiene valor y
   `stock_restored_at` sigue nulo.
-- Bloquea productos en orden determinista antes de restaurar.
-- No filtra productos por `is_active`.
-- Falla si una orden elegible no tiene items restaurables.
-- Registra `stock_restored_at` solamente despues de completar la restauracion.
-
-La fila de la orden permanece bloqueada durante la operacion. Dos
-cancelaciones concurrentes no pueden restaurar stock dos veces.
-
-Las ordenes historicas con `stock_deducted_at` nulo pueden cancelarse, pero no
-restauran inventario porque no existe evidencia de un descuento previo.
+- Bloquea productos antes de restaurar.
+- Registra `stock_restored_at` despues de completar la restauracion.
 
 ### Errores estables
 
 | Error | Significado |
 |---|---|
 | `INVALID_PAYLOAD` | Payload, estado o usuario invalidos. |
-| `ORDER_NOT_FOUND` | El pedido no existe. |
-| `INVALID_ORDER_TRANSITION` | La transicion operativa no esta permitida. |
-| `PAYMENT_REQUIRED` | Se intento entregar un pedido sin pago confirmado. |
-| `CANCELLATION_REASON_REQUIRED` | Falta el motivo de cancelacion. |
-| `PAID_ORDER_CANNOT_BE_CANCELED` | Un pedido pagado no puede cancelarse. |
-| `ORDER_ITEMS_NOT_RESTORABLE` | Los items no permiten restaurar stock con seguridad. |
-| `STOCK_RESTORE_FAILED` | No se pudo restaurar todo el stock esperado. |
+| `ORDER_NOT_FOUND` | Pedido inexistente. |
+| `INVALID_ORDER_TRANSITION` | Transicion no permitida. |
+| `PAYMENT_REQUIRED` | Entrega sin pago confirmado. |
+| `CANCELLATION_REASON_REQUIRED` | Falta motivo. |
+| `PAID_ORDER_CANNOT_BE_CANCELED` | Pedido pagado no cancelable. |
+| `ORDER_ITEMS_NOT_RESTORABLE` | Items no restaurables. |
+| `STOCK_RESTORE_FAILED` | Restauracion incompleta. |
 
 ## `public.transition_order_payment_status()`
 
 ### Responsabilidad
 
-Confirma manualmente el pago de un pedido y registra auditoria basica.
+Confirma manualmente el pago de un pedido.
 
 ### Firma
 
@@ -203,7 +228,7 @@ public.transition_order_payment_status(
 )
 ```
 
-`p_changed_by` debe corresponder a un usuario existente en `auth.users`.
+`p_changed_by` debe existir en `auth.users`.
 
 ### Retorno
 
@@ -220,46 +245,88 @@ public.transition_order_payment_status(
 ### Flujo
 
 1. Valida payload, estado solicitado y usuario.
-2. Bloquea la orden mediante `FOR UPDATE`.
-3. Bloquea la confirmacion si el pedido operativo esta `cancelado`.
+2. Bloquea la orden con `FOR UPDATE`.
+3. Bloquea confirmacion si el pedido esta `cancelado`.
 4. Trata `paid -> paid` como reintento idempotente.
 5. Permite solamente `pending -> paid`.
-6. Actualiza atomica y conjuntamente:
-   - `payment_status = 'paid'`
-   - `paid_at = now()`
-   - `payment_confirmed_by = p_changed_by`
-
-El reintento idempotente no modifica `paid_at`, `payment_confirmed_by` ni
-`updated_at`.
+6. Actualiza `payment_status`, `paid_at` y `payment_confirmed_by`.
 
 ### Errores estables
 
 | Error | Significado |
 |---|---|
 | `INVALID_PAYLOAD` | Payload, estado o usuario invalidos. |
-| `ORDER_NOT_FOUND` | El pedido no existe. |
-| `INVALID_PAYMENT_TRANSITION` | La transicion de pago no esta permitida. |
-| `ORDER_CANCELED` | No se puede confirmar el pago de un pedido cancelado. |
+| `ORDER_NOT_FOUND` | Pedido inexistente. |
+| `INVALID_PAYMENT_TRANSITION` | Transicion no permitida. |
+| `ORDER_CANCELED` | Pedido cancelado. |
 
-### Limitaciones
+## `public.link_order_to_customer_manual()`
 
-- No permite revertir un pago.
-- No registra un historial completo de estados de pago.
-- No crea comprobantes, reembolsos ni conciliaciones.
-- No registra el monto realmente recibido.
+### Responsabilidad
+
+Vincula manualmente un pedido invitado o historico sin owner digital a una
+cuenta customer existente.
+
+### Firma
+
+```text
+public.link_order_to_customer_manual(
+  p_order_id uuid,
+  p_target_user_id uuid,
+  p_changed_by uuid
+)
+```
+
+### Retorno
+
+| Columna | Tipo |
+|---|---|
+| `order_id` | `uuid` |
+| `order_number` | `text` |
+| `user_id` | `uuid` |
+| `user_linked_at` | `timestamptz` |
+| `user_link_source` | `text` |
+
+### Reglas
+
+- `p_order_id`, `p_target_user_id` y `p_changed_by` son obligatorios.
+- `p_changed_by` debe existir en `auth.users`.
+- El target debe existir en `auth.users`.
+- El target debe tener `profiles.role = 'customer'`.
+- El pedido debe existir.
+- El pedido debe tener `user_id IS NULL`.
+- No permite transferencia de owner.
+- No permite desvinculacion.
+- Asigna `user_linked_at = now()` en PostgreSQL.
+- Asigna `user_link_source = 'manual-support'`.
+
+### Errores estables
+
+| Error | Significado |
+|---|---|
+| `INVALID_PAYLOAD` | Payload o actor invalido. |
+| `INVALID_TARGET_USER` | Usuario destino inexistente o no customer. |
+| `ORDER_NOT_FOUND` | Pedido inexistente. |
+| `ORDER_ALREADY_LINKED` | Pedido ya tenia owner digital. |
 
 ## Concurrencia entre RPCs
 
-`transition_order_status()` y `transition_order_payment_status()` bloquean la
-misma fila de `orders`. Si una cancelacion y una confirmacion de pago ocurren al
-mismo tiempo, una operacion espera a la otra y luego valida el estado
-actualizado. El resultado no puede quedar simultaneamente pagado y cancelado.
+Las RPCs de estado y pago bloquean la misma fila de `orders`, por lo que una
+cancelacion y una confirmacion concurrentes se serializan y vuelven a validar
+el estado actualizado.
+
+La vinculacion manual bloquea la orden y actualiza con filtro
+`id = p_order_id AND user_id IS NULL`, evitando transferencias concurrentes.
 
 ## Fuentes relacionadas
 
 - `database/schema.sql`
-- `database/migrations/make_checkout_stock_atomic.sql`
-- `database/migrations/add_safe_order_status_transitions.sql`
-- `database/migrations/add_manual_payment_confirmation.sql`
+- `database/migrations/add_authenticated_checkout_ownership.sql`
+- `database/migrations/link_order_to_customer_manual.sql`
+- `src/app/api/orders/route.ts`
+- `src/app/api/admin/orders/[id]/status/route.ts`
+- `src/app/api/admin/orders/[id]/payment-status/route.ts`
+- `src/app/api/admin/orders/[id]/link-customer/route.ts`
 - [Checkout y pedidos](../dominios/checkout-y-pedidos.md)
+- [Mis Pedidos](../dominios/mis-pedidos.md)
 - [Pagos](../dominios/pagos.md)

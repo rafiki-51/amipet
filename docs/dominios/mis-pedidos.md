@@ -3,42 +3,88 @@
 ## Objetivo
 
 Este documento describe la consulta privada de pedidos vinculados
-explicitamente a una cuenta de cliente.
+explicitamente a una cuenta customer.
 
-El modulo es de solo lectura. No permite cancelar pedidos, confirmar pagos,
-cambiar estados ni vincular pedidos invitados.
+El modulo de cliente es de solo lectura. No permite cancelar pedidos,
+confirmar pagos, cambiar estados ni reclamar pedidos invitados desde la UI
+publica.
 
 ## Ownership digital
 
-`orders.user_id` es la unica fuente de ownership digital de un pedido:
+`orders.user_id` es la unica fuente de ownership digital:
 
 ```text
 orders.user_id = auth.users.id
 ```
 
-Las reglas de ownership son:
+Reglas:
 
-- Un pedido con `user_id` pertenece digitalmente a esa cuenta autenticada.
-- Un pedido con `user_id = null` es un pedido invitado sin owner digital.
-- Nombre, telefono, email y `customer_id` no conceden acceso al pedido.
-- Los pedidos historicos e invitados no se vinculan automaticamente.
+- Un pedido con `user_id` pertenece digitalmente a esa cuenta.
+- Un pedido con `user_id = null` es invitado o historico sin owner digital.
+- Nombre, telefono, email y `customer_id` no conceden acceso.
+- Un pedido sin owner digital no aparece en Mis Pedidos.
 
 `orders.user_linked_at` y `orders.user_link_source` registran metadata de la
 vinculacion. Estos campos no se exponen al cliente.
 
-La FK de `orders.user_id` utiliza `ON DELETE SET NULL`, por lo que eliminar una
-cuenta no elimina el pedido.
+La FK de `orders.user_id` utiliza `ON DELETE SET NULL`.
+
+## Formas actuales de vinculacion
+
+### Checkout autenticado
+
+Si un cliente autenticado con rol `customer` hace checkout, la API pasa
+`p_user_id = auth.users.id` a `public.create_checkout_order()`.
+
+La orden nace con:
+
+```text
+user_id = auth.users.id
+user_linked_at = now()
+user_link_source = 'authenticated-checkout'
+```
+
+### Checkout invitado
+
+Si no hay sesion, el pedido nace sin owner:
+
+```text
+user_id = null
+user_linked_at = null
+user_link_source = null
+```
+
+### Vinculacion manual por admin/soporte
+
+Existe una API administrativa para vincular manualmente un pedido invitado o
+historico a una cuenta customer existente:
+
+```text
+POST /api/admin/orders/[id]/link-customer
+```
+
+Esta accion:
+
+- Requiere rol `admin` u `operator`.
+- Valida que el pedido exista.
+- Exige que el pedido tenga `user_id IS NULL`.
+- Valida que el usuario destino exista y tenga rol `customer`.
+- No permite transferir owner.
+- No permite desvincular.
+- Setea `user_link_source = 'manual-support'`.
+
+No existe reclamo publico por token o email en el estado actual.
 
 ## API privada
 
 Las APIs privadas requieren:
 
 1. Sesion valida de Supabase Auth.
-2. Perfil con `profiles.role = 'customer'`.
+2. Perfil con rol `customer`.
 3. Filtro de ownership por `orders.user_id = auth.users.id`.
 
-El servidor valida sesion y rol con el cliente server-side. Solamente despues
-utiliza `service_role` para consultar pedidos y relaciones protegidas.
+El servidor valida sesion y rol con cliente server-side. Solamente despues usa
+`service_role` para consultar pedidos y relaciones protegidas.
 
 ### Listar pedidos propios
 
@@ -46,7 +92,7 @@ utiliza `service_role` para consultar pedidos y relaciones protegidas.
 GET /api/account/orders
 ```
 
-Retorna como maximo los 20 pedidos propios mas recientes, ordenados por:
+Retorna como maximo 20 pedidos propios recientes, ordenados por:
 
 ```text
 created_at DESC, id DESC
@@ -60,7 +106,7 @@ Cada elemento contiene:
 - Fecha de creacion.
 - Total.
 - Cantidad total de unidades.
-- Vista previa de hasta tres productos con nombre y cantidad.
+- Vista previa de hasta tres productos.
 
 ### Consultar detalle propio
 
@@ -89,14 +135,13 @@ Retorna:
 
 | HTTP | Significado |
 |---:|---|
-| `400` | El ID solicitado no es un UUID valido. |
-| `401` | No existe una sesion autenticada. |
+| `400` | ID de pedido invalido. |
+| `401` | No existe sesion autenticada. |
 | `403` | La cuenta autenticada no tiene rol `customer`. |
-| `404` | El pedido no existe o no pertenece a la cuenta. |
+| `404` | Pedido inexistente, invitado o ajeno. |
 | `500` | Error interno sanitizado. |
 
-Un pedido ajeno, invitado o inexistente produce la misma respuesta `404`. La
-API no confirma la existencia de pedidos que la cuenta no puede consultar.
+Un pedido ajeno, invitado o inexistente produce la misma respuesta `404`.
 
 ## Datos no expuestos
 
@@ -107,7 +152,7 @@ Las respuestas privadas no incluyen:
 - `admin_notes` ni `payment_confirmed_by`.
 - Llave o hash de idempotencia.
 - Datos internos de descuento o restauracion de stock.
-- `order_status_history.changed_by` ni notas internas del historial.
+- `order_status_history.changed_by` ni notas internas.
 - Motivo de cancelacion.
 
 Los DTOs de cliente son independientes de los tipos administrativos.
@@ -120,16 +165,8 @@ Los DTOs de cliente son independientes de los tipos administrativos.
 /mi-cuenta/pedidos
 ```
 
-Muestra los pedidos vinculados a la cuenta con estados operativo y de pago,
-fecha, total, cantidad, vista previa de productos y acceso al detalle.
-
-La vista contempla:
-
-- Carga.
-- Listado vacio.
-- Error recuperable.
-- Sesion ausente.
-- Cuenta sin permisos.
+Muestra pedidos vinculados a la cuenta con estados, fecha, total, cantidad,
+preview de productos y acceso al detalle.
 
 ### Detalle
 
@@ -138,29 +175,44 @@ La vista contempla:
 ```
 
 Muestra productos, entrega, notas del cliente, pago, totales y timeline
-publico. No expone acciones administrativas, cancelacion ni acciones de pago.
+publico.
 
 La UI consume exclusivamente las APIs privadas. No consulta Supabase
-directamente, no aplica ownership en el navegador y no utiliza almacenamiento
-local para pedidos.
+directamente, no aplica ownership en el navegador y no usa almacenamiento local
+para pedidos.
+
+## Restricciones customer
+
+Un customer:
+
+- Solo ve pedidos con `orders.user_id = auth.users.id`.
+- No puede ver pedidos invitados.
+- No puede reclamar pedidos desde la UI.
+- No puede cancelar pedidos.
+- No puede confirmar pagos.
+- No puede cambiar estados.
+- No puede vincular ni desvincular pedidos.
 
 ## Limitaciones actuales
 
-- El checkout publico no vincula automaticamente pedidos a una sesion
-  autenticada.
-- No existe flujo para reclamar o vincular pedidos invitados.
-- Los pedidos con `user_id = null` no aparecen en Mis Pedidos.
-- No existen filtros, paginacion por cursor ni acciones sobre pedidos.
+- No existen filtros ni cursor pagination para Mis Pedidos.
+- No existe reclamo publico de pedidos invitados.
+- No existe transferencia ni desvinculacion de owner.
+- La vinculacion manual no tiene tabla de auditoria estructurada; registra el
+  evento en logs server-side.
 
 ## Fuentes relacionadas
 
 - `database/migrations/add_order_user_ownership.sql`
+- `database/migrations/add_authenticated_checkout_ownership.sql`
+- `database/migrations/link_order_to_customer_manual.sql`
 - `database/schema.sql`
 - `src/lib/account/auth.ts`
 - `src/lib/account/orders.ts`
 - `src/types/customer-order.ts`
 - `src/app/api/account/orders/route.ts`
 - `src/app/api/account/orders/[id]/route.ts`
+- `src/app/api/admin/orders/[id]/link-customer/route.ts`
 - `src/app/mi-cuenta/pedidos/page.tsx`
 - `src/app/mi-cuenta/pedidos/[id]/page.tsx`
 - [Checkout y pedidos](./checkout-y-pedidos.md)

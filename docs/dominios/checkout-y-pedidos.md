@@ -3,18 +3,21 @@
 ## Objetivo
 
 Este documento describe el flujo actual desde el checkout publico hasta el
-procesamiento y cancelacion de pedidos en el admin.
+procesamiento, pago, cancelacion y vinculacion de pedidos.
 
 PostgreSQL es la autoridad final para precios, stock, creacion del pedido y
 transiciones operativas.
 
-## Checkout publico
+## Checkout
 
 ### Endpoint
 
 ```text
 POST /api/orders
 ```
+
+El endpoint permite checkout invitado y checkout autenticado de clientes. El
+payload publico es el mismo en ambos casos; el frontend no envia `user_id`.
 
 ### Payload
 
@@ -42,7 +45,7 @@ POST /api/orders
 }
 ```
 
-Reglas principales de la API:
+Reglas principales:
 
 - `idempotencyKey` debe ser un UUID v4.
 - El nombre debe tener al menos 3 caracteres.
@@ -53,20 +56,83 @@ Reglas principales de la API:
 - La cantidad total normalizada por producto no puede superar 99.
 - `honeypot` debe permanecer vacio.
 - El metodo de pago debe ser uno de los configurados.
+- El cliente no envia ni controla `user_id`.
 
-El cliente no envia ni controla:
+El cliente no controla precios, subtotales, tarifa de entrega, total, numero de
+pedido, estado operativo ni estado de pago.
 
-- Precios.
-- Subtotales.
-- Tarifa de entrega.
-- Total.
-- Numero de pedido.
-- Estado operativo.
-- Estado de pago.
+### Rate limiting
 
-### Respuesta exitosa
+`POST /api/orders` aplica rate limiting server-side antes de llamar la RPC:
 
-La API responde `201` con:
+- 10 requests por IP cada 10 minutos.
+- Cuenta requests validos e invalidos.
+- Usa Upstash Redis o variables compatibles de Vercel KV.
+- Hashea la IP antes de usarla en la key.
+- No guarda nombre, telefono, direccion, email, user agent completo ni llave de
+  idempotencia.
+- Si Redis falla, usa fail-open y registra el error con `console.error`.
+
+Al exceder el limite responde:
+
+```json
+{
+  "error": "Demasiados intentos. Intentá nuevamente en unos minutos.",
+  "code": "RATE_LIMITED"
+}
+```
+
+Incluye headers `Retry-After`, `X-RateLimit-Limit`,
+`X-RateLimit-Remaining` y `X-RateLimit-Reset`.
+
+## Checkout invitado
+
+Si no hay sesion de Supabase Auth, la API mantiene el checkout invitado:
+
+```text
+p_user_id = null
+```
+
+La RPC crea el pedido con:
+
+```text
+orders.user_id = null
+orders.user_linked_at = null
+orders.user_link_source = null
+```
+
+El pedido no aparece en Mis Pedidos hasta que sea vinculado manualmente por un
+admin/operator.
+
+## Checkout autenticado
+
+Si hay sesion, la API valida el perfil:
+
+- Debe existir `profiles`.
+- `profiles.role` debe ser `customer`.
+- `admin` y `operator` no pueden crear pedidos por checkout.
+- Si hay error consultando Auth o perfil, la API responde error interno
+  sanitizado y no crea pedido como invitado.
+
+Cuando la sesion es customer:
+
+```text
+p_user_id = auth.users.id
+```
+
+La RPC crea el pedido con:
+
+```text
+orders.user_id = auth.users.id
+orders.user_linked_at = now()
+orders.user_link_source = 'authenticated-checkout'
+```
+
+Nombre, telefono, email y `customer_id` no se usan como ownership digital.
+
+## Respuesta exitosa
+
+La API responde `201`:
 
 ```json
 {
@@ -81,78 +147,60 @@ La API responde `201` con:
 
 ## Flujo de creacion
 
-1. La API valida y normaliza el payload.
-2. Consolida items repetidos por producto y los ordena por UUID.
-3. Genera un hash SHA-256 del payload normalizado.
-4. Llama a `public.create_checkout_order()`.
-5. La RPC serializa intentos con la misma llave de idempotencia.
-6. Bloquea productos y valida stock bajo bloqueo.
-7. Calcula precios y totales desde PostgreSQL.
-8. Crea cliente, direccion, pedido, items e historial.
-9. Descuenta stock dentro de la misma transaccion.
-10. Registra `stock_deducted_at`.
-11. Retorna la orden creada o el resultado idempotente existente.
-
-## Ownership digital
-
-`orders.user_id` representa la cuenta autenticada autorizada para consultar un
-pedido desde Mis Pedidos.
-
-- Es nullable para mantener checkout invitado.
-- El checkout publico actual no asigna `user_id`.
-- Los pedidos invitados e historicos permanecen con `user_id = null`.
-- Telefono, email y `customer_id` no se utilizan como ownership.
-- Un pedido sin owner digital no aparece en Mis Pedidos.
-
-La consulta privada de pedidos se documenta en
-[Mis Pedidos](./mis-pedidos.md).
+1. La API aplica rate limiting.
+2. Valida y normaliza el payload.
+3. Consolida items repetidos y los ordena por UUID.
+4. Genera hash SHA-256 del payload normalizado.
+5. Resuelve sesion opcional.
+6. Si hay usuario, exige rol `customer`.
+7. Llama a `public.create_checkout_order()` con `p_user_id` o `null`.
+8. La RPC serializa intentos con la misma llave de idempotencia.
+9. Bloquea productos y valida stock.
+10. Calcula precios y totales desde PostgreSQL.
+11. Crea cliente, direccion, pedido, items e historial.
+12. Descuenta stock dentro de la misma transaccion.
+13. Registra `stock_deducted_at`.
+14. Retorna la orden creada o el resultado idempotente existente.
 
 ## Idempotencia
 
-La llave de idempotencia identifica un intento logico de checkout.
+La llave identifica un intento logico de checkout.
 
-- Misma llave y mismo payload: retorna la orden existente.
-- Misma llave y payload diferente: responde `IDEMPOTENCY_CONFLICT`.
-- Un reintento idempotente no crea otra orden ni vuelve a descontar stock.
-- El hash incluye cliente, entrega, metodo de pago, notas e items normalizados.
+- Misma llave, mismo payload y mismo owner: retorna la orden existente.
+- Misma llave con payload diferente: `IDEMPOTENCY_CONFLICT`.
+- Misma llave con owner diferente: `IDEMPOTENCY_CONFLICT`.
+- Un reintento no crea otra orden ni vuelve a descontar stock.
 
-El cliente debe reutilizar la misma llave solamente al reintentar el mismo
-checkout. Un checkout nuevo debe utilizar una llave nueva.
+El hash no incluye ownership; la RPC compara ownership por separado con
+`IS NOT DISTINCT FROM`.
 
 ## Stock y concurrencia
 
-El stock se descuenta cuando se crea el pedido, no cuando pasa a preparacion.
+El stock se descuenta cuando se crea el pedido.
 
 La RPC:
 
 - Normaliza cantidades duplicadas.
-- Bloquea los productos solicitados en orden determinista con `FOR UPDATE`.
-- Valida actividad y stock mientras conserva los bloqueos.
+- Bloquea productos en orden determinista con `FOR UPDATE`.
+- Valida actividad y stock bajo bloqueo.
 - Descuenta stock antes de completar la transaccion.
 - Verifica que todos los productos esperados fueron actualizados.
-
-Si dos clientes intentan comprar simultaneamente la ultima unidad, solamente
-una transaccion puede completar el descuento. La otra recibe
-`INSUFFICIENT_STOCK`.
 
 Si cualquier paso falla, no quedan descuentos ni pedidos parciales.
 
 ## Errores del checkout
 
-### Errores de API
-
 | Codigo | HTTP | Significado |
 |---|---:|---|
-| `INVALID_JSON` | 400 | El cuerpo no contiene JSON valido. |
-| `INVALID_PAYLOAD` | 400 | El payload no cumple las validaciones. |
-| `IDEMPOTENCY_CONFLICT` | 409 | La llave ya fue usada con otro payload. |
-| `PRODUCT_NOT_FOUND` | 404 | Un producto no existe o no esta activo. |
-| `DELIVERY_ZONE_NOT_FOUND` | 404 | La zona no existe o no esta activa. |
-| `INSUFFICIENT_STOCK` | 409 | No existe stock suficiente. |
-| `INTERNAL_ERROR` | 500 | Error no reconocido del servidor. |
-
-Los errores de negocio principales provienen de
-`public.create_checkout_order()`.
+| `RATE_LIMITED` | 429 | Se excedio el limite de intentos. |
+| `INVALID_JSON` | 400 | JSON invalido. |
+| `INVALID_PAYLOAD` | 400 | Payload invalido. |
+| `FORBIDDEN` | 403 | Sesion autenticada sin rol customer. |
+| `IDEMPOTENCY_CONFLICT` | 409 | Llave usada con payload u owner distinto. |
+| `PRODUCT_NOT_FOUND` | 404 | Producto inexistente o inactivo. |
+| `DELIVERY_ZONE_NOT_FOUND` | 404 | Zona inexistente o inactiva. |
+| `INSUFFICIENT_STOCK` | 409 | Stock insuficiente. |
+| `INTERNAL_ERROR` | 500 | Error no reconocido. |
 
 ## Estados operativos
 
@@ -176,6 +224,16 @@ Los errores de negocio principales provienen de
 
 `en-ruta -> entregado` requiere `payment_status = 'paid'`.
 
+## Estados de pago
+
+| Estado | Significado |
+|---|---|
+| `pending` | Pago pendiente. |
+| `paid` | Pago confirmado manualmente. |
+| `canceled` | Pago pendiente cancelado junto con el pedido. |
+
+Todos los pedidos nuevos nacen con `payment_status = 'pending'`.
+
 ## Administracion de pedidos
 
 ### Consultar pedidos
@@ -184,8 +242,15 @@ Los errores de negocio principales provienen de
 GET /api/admin/orders
 ```
 
-Retorna pedidos con cliente, direccion, zona, items, totales, estado operativo
-y datos basicos de pago.
+Requiere rol `admin` u `operator`.
+
+La respuesta usa paginacion server-side:
+
+- `page`, default `1`.
+- `limit`, default `25`.
+- maximo `50`.
+- filtros por estado, estado de pago, metodo de pago y zona.
+- orden estable por `created_at DESC, id DESC`.
 
 ### Cambiar estado operativo
 
@@ -193,29 +258,54 @@ y datos basicos de pago.
 PATCH /api/admin/orders/[id]/status
 ```
 
-Payload normal:
-
-```json
-{
-  "status": "preparando"
-}
-```
-
-Payload de cancelacion:
-
-```json
-{
-  "status": "cancelado",
-  "cancellationReason": "Motivo obligatorio"
-}
-```
-
-Las APIs administrativas requieren sesion y rol `admin` u `operator`. El
-endpoint no actualiza `orders` directamente; llama exclusivamente a
+El endpoint exige sesion admin/operator y llama exclusivamente a
 `public.transition_order_status()`.
 
-La UI limita las acciones visibles, pero PostgreSQL valida las reglas
-definitivas.
+### Confirmar pago
+
+```text
+PATCH /api/admin/orders/[id]/payment-status
+```
+
+Payload exacto:
+
+```json
+{
+  "paymentStatus": "paid"
+}
+```
+
+El endpoint exige sesion admin/operator y llama exclusivamente a
+`public.transition_order_payment_status()`.
+
+### Vincular pedido invitado a customer
+
+```text
+POST /api/admin/orders/[id]/link-customer
+```
+
+Payload:
+
+```json
+{
+  "userId": "uuid-del-auth-user-customer"
+}
+```
+
+El endpoint:
+
+- Exige rol `admin` u `operator`.
+- Valida UUIDs.
+- Acepta solo `userId` en el payload.
+- Llama a `public.link_order_to_customer_manual()`.
+- Solo vincula pedidos con `user_id IS NULL`.
+- No permite transferencia ni desvinculacion.
+
+La vinculacion manual usa:
+
+```text
+orders.user_link_source = 'manual-support'
+```
 
 ## Cancelacion y restauracion de stock
 
@@ -225,60 +315,42 @@ Cancelar un pedido:
 - Falla si el pedido esta pagado.
 - Cambia `status` a `cancelado`.
 - Cambia `payment_status` de `pending` a `canceled`.
-- Registra fecha y motivo de cancelacion.
+- Registra fecha y motivo.
 - Inserta historial operativo.
 
 El stock se restaura solo cuando:
 
 - `stock_deducted_at` tiene valor.
 - `stock_restored_at` sigue nulo.
-- Todos los items requeridos pueden asociarse a productos existentes.
-
-La restauracion ocurre dentro de la misma transaccion y se registra mediante
-`stock_restored_at`. El bloqueo de la orden evita restauraciones dobles ante
-cancelaciones concurrentes.
-
-Las ordenes historicas sin `stock_deducted_at` no restauran stock.
-
-## Errores de transicion administrativa
-
-| Codigo | HTTP | Significado |
-|---|---:|---|
-| `INVALID_JSON` | 400 | JSON invalido. |
-| `INVALID_STATUS` | 400 | Estado solicitado desconocido. |
-| `INVALID_PAYLOAD` | 400 | Payload o usuario invalidos. |
-| `ORDER_NOT_FOUND` | 404 | Pedido inexistente. |
-| `INVALID_ORDER_TRANSITION` | 409 | Transicion operativa no permitida. |
-| `PAYMENT_REQUIRED` | 409 | El pedido no puede entregarse sin pago. |
-| `CANCELLATION_REASON_REQUIRED` | 400 | Falta el motivo de cancelacion. |
-| `PAID_ORDER_CANNOT_BE_CANCELED` | 409 | Un pedido pagado no puede cancelarse. |
-| `ORDER_ITEMS_NOT_RESTORABLE` | 409 | Los items no permiten restaurar stock. |
-| `STOCK_RESTORE_FAILED` | 500 | No se restauro todo el stock esperado. |
-| `INTERNAL_ERROR` | 500 | Error no reconocido del servidor. |
+- Los items son restaurables.
 
 ## Decisiones arquitectonicas
 
 - La API publica valida formato y genera el hash de idempotencia.
+- El frontend nunca envia `user_id`.
 - PostgreSQL calcula precios, totales y stock real.
 - Las operaciones criticas se ejecutan mediante RPCs transaccionales.
-- No existen actualizaciones directas de estado desde el endpoint admin.
-- La base de datos aplica las reglas aunque la UI este desactualizada.
+- Las APIs administrativas validan rol antes de usar `service_role`.
+- La base de datos aplica reglas de transicion aunque la UI este
+  desactualizada.
 - El estado de pago permanece separado del estado operativo.
 
 ## Limitaciones actuales
 
 - No existen reservas temporales de stock.
 - No existe administracion de productos dentro de este flujo.
-- No se documentan aqui RLS, despliegue, monitoreo ni backups.
+- No existe reclamo publico de pedidos invitados.
+- No existe desvinculacion ni transferencia de owner.
 - La respuesta publica del checkout no incluye `payment_status`.
-- El checkout publico no vincula automaticamente pedidos a cuentas
-  autenticadas.
 
 ## Fuentes relacionadas
 
 - `src/app/api/orders/route.ts`
+- `src/lib/rate-limit.ts`
 - `src/app/api/admin/orders/route.ts`
 - `src/app/api/admin/orders/[id]/status/route.ts`
+- `src/app/api/admin/orders/[id]/payment-status/route.ts`
+- `src/app/api/admin/orders/[id]/link-customer/route.ts`
 - `database/schema.sql`
 - [Mis Pedidos](./mis-pedidos.md)
 - [RPCs transaccionales](../base-de-datos/rpcs.md)

@@ -110,8 +110,14 @@ El area de clientes incorporo las vistas `/mi-cuenta/pedidos` y
 `/mi-cuenta/pedidos/[id]`, con listado, detalle, entrega, totales y timeline
 publico. Un pedido ajeno, invitado o inexistente se presenta como no encontrado.
 
-Esta etapa no agrego vinculacion de pedidos invitados ni modifico el checkout
-publico para asociar pedidos a sesiones autenticadas.
+Posteriormente el checkout empezo a vincular automaticamente pedidos nuevos
+cuando el comprador tiene sesion customer valida. Los pedidos invitados siguen
+permitidos y nacen con `user_id = null`.
+
+Tambien se agrego una vinculacion manual asistida por admin/soporte para
+pedidos invitados o historicos. Esta accion usa `user_link_source =
+'manual-support'`, exige pedido sin owner y no permite transferencias ni
+desvinculacion.
 
 ## Expediente digital
 
@@ -129,11 +135,56 @@ El area de clientes evoluciono para incluir:
 Los datos se protegen mediante RLS y las operaciones de escritura se realizan
 principalmente con Server Actions autenticadas.
 
+## Endurecimiento de seguridad
+
+Se completo una ronda de hardening tecnico:
+
+- Dependencias principales fijadas para Next.js y `eslint-config-next`.
+- Rate limiting en `POST /api/orders` con Upstash Redis.
+- Headers defensivos minimos configurados globalmente en `next.config.ts`.
+- Auditoria de RLS para tablas customer, expediente y pedidos.
+- Auditoria de RPCs, `service_role` y operaciones administrativas.
+
+El rate limiter cuenta intentos validos e invalidos, usa hash de IP y aplica
+fail-open si Redis no esta disponible para no bloquear checkout legitimo.
+
+## Auth y roles
+
+Los roles de aplicacion se centralizaron como:
+
+- `customer`
+- `operator`
+- `admin`
+
+Se agregaron helpers compartidos para:
+
+- Validar roles.
+- Obtener usuario autenticado y rol.
+- Proteger APIs admin.
+- Proteger APIs customer.
+- Proteger Server Actions customer.
+- Proteger paginas `/mi-cuenta`.
+
+Esto redujo duplicacion de `auth.getUser()`, consultas a `profiles.role` y
+checks manuales de rol en las rutas principales.
+
+## Mejoras del admin
+
+El listado de pedidos del admin incorporo paginacion server-side con:
+
+- `page` default `1`.
+- `limit` default `25`.
+- maximo `50`.
+- filtros por estado, estado de pago, metodo de pago y zona.
+- orden estable por `created_at DESC, id DESC`.
+
+Esto evita cargar todos los pedidos en memoria cuando crezca el historial.
+
 ## Estado de la evolucion
 
 Amipet paso de un prototipo local a una aplicacion conectada a PostgreSQL con
-flujos transaccionales para pedidos, stock, cancelaciones y pagos, ademas de un
-area autenticada para clientes y expediente digital.
+flujos transaccionales para pedidos, stock, cancelaciones, pagos y ownership de
+pedidos, ademas de un area autenticada para clientes y expediente digital.
 
 La documentacion detallada de cada dominio se mantendra separada de este
 resumen historico.
