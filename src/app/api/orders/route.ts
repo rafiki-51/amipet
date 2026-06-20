@@ -2,6 +2,10 @@ import { createHash } from "crypto";
 import { NextResponse } from "next/server";
 import { paymentMethods } from "@/config/payment";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import {
+  createRateLimitHeaders,
+  rateLimitByIp,
+} from "@/lib/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 
 type CreateOrderPayload = {
@@ -44,6 +48,11 @@ const validPaymentMethods = new Set<string>(
   paymentMethods.map((method) => method.id),
 );
 const MAX_QUANTITY_PER_ITEM = 99;
+const CHECKOUT_RATE_LIMIT = {
+  endpoint: "/api/orders",
+  limit: 10,
+  windowSeconds: 10 * 60,
+};
 const idempotencyKeyPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -227,6 +236,40 @@ function validateItems(items: unknown): ValidatedOrderItem[] | null {
 }
 
 export async function POST(request: Request) {
+  const rateLimitResult = await rateLimitByIp(
+    request.headers,
+    CHECKOUT_RATE_LIMIT,
+  );
+
+  if ("error" in rateLimitResult && rateLimitResult.error) {
+    console.error("Checkout rate limiter failed open", {
+      endpoint: CHECKOUT_RATE_LIMIT.endpoint,
+      ipHash: rateLimitResult.ipHash,
+      error: rateLimitResult.error,
+    });
+  }
+
+  if (!rateLimitResult.allowed) {
+    console.warn("Checkout rate limit exceeded", {
+      endpoint: CHECKOUT_RATE_LIMIT.endpoint,
+      ipHash: rateLimitResult.ipHash,
+      limit: rateLimitResult.limit,
+      windowSeconds: CHECKOUT_RATE_LIMIT.windowSeconds,
+      timestamp: new Date().toISOString(),
+    });
+
+    return NextResponse.json(
+      {
+        error: "Demasiados intentos. Intentá nuevamente en unos minutos.",
+        code: "RATE_LIMITED",
+      },
+      {
+        status: 429,
+        headers: createRateLimitHeaders(rateLimitResult),
+      },
+    );
+  }
+
   let payload: CreateOrderPayload;
 
   try {
