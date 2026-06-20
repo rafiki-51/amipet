@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-
-const adminRoles = new Set(["admin", "operator"]);
+import { requireCustomerPageUser } from "@/lib/auth/customer-pages";
 
 type Pet = {
   id: string;
@@ -79,32 +77,10 @@ export default async function VacunasPage({
   searchParams,
 }: VacunasPageProps) {
   const { id } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect(`/login?redirect=/mi-cuenta/mascotas/${id}/vacunas`);
-  }
-
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (profileError) {
-    console.error("Failed to load customer profile role", profileError);
-  }
-
-  if (profile && adminRoles.has(profile.role as string)) {
-    redirect("/admin/pedidos");
-  }
-
-  if (!profile || profile.role !== "customer") {
-    redirect("/login");
-  }
+  const { supabase, user } = await requireCustomerPageUser({
+    redirectPath: `/mi-cuenta/mascotas/${id}/vacunas`,
+    profileErrorLogMessage: "Failed to load customer profile role",
+  });
 
   const { data: pet, error: petError } = await supabase
     .from("pets")
