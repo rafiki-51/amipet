@@ -2,6 +2,7 @@ import { createHash } from "crypto";
 import { NextResponse } from "next/server";
 import { paymentMethods } from "@/config/payment";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { isCustomerRole } from "@/lib/auth/roles";
 import {
   createRateLimitHeaders,
   rateLimitByIp,
@@ -347,7 +348,7 @@ export async function POST(request: Request) {
         return jsonError("Error interno.", "INTERNAL_ERROR", 500);
       }
 
-      if (!profile || profile.role !== "customer") {
+      if (!profile || !isCustomerRole(profile.role)) {
         return jsonError(
           "Esta cuenta no puede realizar pedidos como cliente.",
           "FORBIDDEN",

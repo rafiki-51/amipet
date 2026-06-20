@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { useState } from "react";
+import { isAdminRole, isCustomerRole } from "@/lib/auth/roles";
 import { createClient } from "@/lib/supabase/browser";
 
 export default function LoginPage() {
@@ -48,13 +49,13 @@ export default function LoginPage() {
       return;
     }
 
-    if (profile.role === "customer") {
+    if (isCustomerRole(profile.role)) {
       router.push("/mi-cuenta");
       router.refresh();
       return;
     }
 
-    if (profile.role === "admin" || profile.role === "operator") {
+    if (isAdminRole(profile.role)) {
       router.push("/admin/pedidos");
       router.refresh();
       return;
