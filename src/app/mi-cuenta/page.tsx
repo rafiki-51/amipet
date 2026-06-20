@@ -1,41 +1,16 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { SignOutButton } from "@/components/account/SignOutButton";
-import { createClient } from "@/lib/supabase/server";
-
-const adminRoles = new Set(["admin", "operator"]);
+import { requireCustomerPageUser } from "@/lib/auth/customer-pages";
 
 function displayValue(value: string | null | undefined) {
   return value?.trim() || "Pendiente";
 }
 
 export default async function MiCuentaPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login?redirect=/mi-cuenta");
-  }
-
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("email, role")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (profileError) {
-    console.error("Failed to load customer profile role", profileError);
-  }
-
-  if (profile && adminRoles.has(profile.role as string)) {
-    redirect("/admin/pedidos");
-  }
-
-  if (!profile || profile.role !== "customer") {
-    redirect("/login");
-  }
+  const { supabase, user, profile } = await requireCustomerPageUser({
+    redirectPath: "/mi-cuenta",
+    profileErrorLogMessage: "Failed to load customer profile role",
+  });
 
   const { data: customerProfile, error: customerProfileError } = await supabase
     .from("customer_profiles")

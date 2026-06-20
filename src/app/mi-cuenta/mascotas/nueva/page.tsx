@@ -1,9 +1,6 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { createPet } from "@/actions/pets";
-import { createClient } from "@/lib/supabase/server";
-
-const adminRoles = new Set(["admin", "operator"]);
+import { requireCustomerPageUser } from "@/lib/auth/customer-pages";
 
 const errorMessages: Record<string, string> = {
   profile: "No pudimos validar tu perfil. Intentalo nuevamente.",
@@ -22,32 +19,10 @@ type NuevaMascotaPageProps = {
 export default async function NuevaMascotaPage({
   searchParams,
 }: NuevaMascotaPageProps) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login?redirect=/mi-cuenta/mascotas/nueva");
-  }
-
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (profileError) {
-    console.error("Failed to load customer profile role", profileError);
-  }
-
-  if (profile && adminRoles.has(profile.role as string)) {
-    redirect("/admin/pedidos");
-  }
-
-  if (!profile || profile.role !== "customer") {
-    redirect("/login");
-  }
+  await requireCustomerPageUser({
+    redirectPath: "/mi-cuenta/mascotas/nueva",
+    profileErrorLogMessage: "Failed to load customer profile role",
+  });
 
   const resolvedSearchParams = await searchParams;
   const errorMessage = resolvedSearchParams?.error
