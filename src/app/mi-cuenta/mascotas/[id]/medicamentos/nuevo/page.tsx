@@ -2,9 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { createPetMedication } from "@/actions/pet-medications";
-import { createClient } from "@/lib/supabase/server";
-
-const adminRoles = new Set(["admin", "operator"]);
+import { requireCustomerPageUser } from "@/lib/auth/customer-pages";
 
 const errorMessages: Record<string, string> = {
   profile: "No pudimos validar tu perfil. Intentalo nuevamente.",
@@ -60,32 +58,10 @@ export default async function NewMedicationPage({
   searchParams,
 }: NewMedicationPageProps) {
   const { id } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect(`/login?redirect=/mi-cuenta/mascotas/${id}/medicamentos/nuevo`);
-  }
-
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (profileError) {
-    console.error("Failed to load profile for medication creation", profileError);
-  }
-
-  if (profile && adminRoles.has(profile.role as string)) {
-    redirect("/admin/pedidos");
-  }
-
-  if (!profile || profile.role !== "customer") {
-    redirect("/login");
-  }
+  const { supabase, user } = await requireCustomerPageUser({
+    redirectPath: `/mi-cuenta/mascotas/${id}/medicamentos/nuevo`,
+    profileErrorLogMessage: "Failed to load profile for medication creation",
+  });
 
   const { data: pet, error: petError } = await supabase
     .from("pets")
