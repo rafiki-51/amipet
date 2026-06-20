@@ -1,10 +1,9 @@
 import { redirect } from "next/navigation";
 
+import { isAdminRole } from "@/lib/auth/roles";
 import { createClient } from "@/lib/supabase/server";
 
 import { AdminPedidosClient } from "./AdminPedidosClient";
-
-const adminRoles = new Set(["admin", "operator"]);
 
 export default async function AdminPedidosPage() {
   const supabase = await createClient();
@@ -27,7 +26,7 @@ export default async function AdminPedidosPage() {
     console.error("Failed to validate admin pedidos profile", profileError);
   }
 
-  if (profileError || !profile || !adminRoles.has(profile.role as string)) {
+  if (profileError || !profile || !isAdminRole(profile.role)) {
     redirect("/admin/login");
   }
 

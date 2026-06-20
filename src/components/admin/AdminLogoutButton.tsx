@@ -2,9 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { isAdminRole } from "@/lib/auth/roles";
 import { createClient } from "@/lib/supabase/browser";
-
-const adminRoles = new Set(["admin", "operator"]);
 
 export function AdminLogoutButton() {
   const router = useRouter();
@@ -30,7 +29,7 @@ export function AdminLogoutButton() {
         .eq("id", user.id)
         .maybeSingle();
 
-      if (isMounted && profile && adminRoles.has(profile.role as string)) {
+      if (isMounted && profile && isAdminRole(profile.role)) {
         setIsVisible(true);
       }
     }

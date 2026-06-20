@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { isAdminRole } from "@/lib/auth/roles";
 import { createMiddlewareClient } from "@/lib/supabase/middleware";
-
-const adminRoles = new Set(["admin", "operator"]);
 
 function redirectWithCookies(
   request: NextRequest,
@@ -59,7 +58,7 @@ export async function middleware(request: NextRequest) {
     );
   }
 
-  if (!profile || !adminRoles.has(profile.role as string)) {
+  if (!profile || !isAdminRole(profile.role)) {
     return redirectWithCookies(
       request,
       response,

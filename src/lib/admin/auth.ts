@@ -1,9 +1,8 @@
 import "server-only";
 
 import { NextResponse } from "next/server";
+import { isAdminRole } from "@/lib/auth/roles";
 import { createClient } from "@/lib/supabase/server";
-
-const adminRoles = new Set(["admin", "operator"]);
 
 type AdminApiUserResult =
   | {
@@ -37,7 +36,7 @@ export async function getAdminApiUser(): Promise<AdminApiUserResult> {
     console.error("Failed to validate admin API profile", error);
   }
 
-  if (error || !profile || !adminRoles.has(profile.role as string)) {
+  if (error || !profile || !isAdminRole(profile.role)) {
     return {
       response: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
     };
