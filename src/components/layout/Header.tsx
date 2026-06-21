@@ -3,7 +3,7 @@ import { CartNavLink } from "@/components/cart/CartNavLink";
 
 export function Header() {
   return (
-    <header className="border-b border-slate-200 bg-white">
+    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <Link href="/" className="text-xl font-bold tracking-tight text-slate-900">
           Amipet
