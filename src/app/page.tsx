@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { siteConfig } from "@/config/site";
 import { formatCurrency } from "@/lib/format";
@@ -60,11 +61,16 @@ export default async function Home() {
       <section className="bg-emerald-50/70 px-6 py-12 sm:py-16 lg:py-20">
         <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1fr_420px] lg:items-center">
           <div>
-            <div className="mb-6 inline-flex items-center gap-3 rounded-full bg-white px-4 py-2 text-sm font-semibold text-emerald-700 shadow-sm">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-600 text-base font-bold text-white">
-                A
-              </span>
-              <span>Espacio para isotipo Amipet</span>
+            <div className="mb-6 inline-flex rounded-2xl bg-white p-3 shadow-sm">
+              <Image
+                src="/images/amipet-logo-primary.png"
+                alt="Amipet"
+                width={1080}
+                height={300}
+                priority
+                sizes="(max-width: 640px) 280px, (max-width: 1024px) 360px, 420px"
+                className="h-auto w-full max-w-[280px] sm:max-w-[360px] lg:max-w-[420px]"
+              />
             </div>
 
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700">
