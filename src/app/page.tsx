@@ -68,8 +68,8 @@ export default async function Home() {
                 width={1080}
                 height={300}
                 priority
-                sizes="(max-width: 640px) 280px, (max-width: 1024px) 360px, 420px"
-                className="h-auto w-full max-w-[280px] sm:max-w-[360px] lg:max-w-[420px]"
+                sizes="(max-width: 640px) 240px, (max-width: 1024px) 360px, 420px"
+                className="h-auto w-full max-w-[240px] sm:max-w-[360px] lg:max-w-[420px]"
               />
             </div>
 
@@ -78,13 +78,13 @@ export default async function Home() {
             </p>
 
             <h1 className="mt-4 max-w-3xl text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
-              Alimento para perros y gatos con delivery local
+              Cuidado y alimento para las mascotas que son parte de tu familia
             </h1>
 
             <p className="mt-5 max-w-2xl text-base leading-7 text-slate-700 sm:text-lg">
-              Compra productos para tu mascota con entrega en el este de San
-              José. Una forma simple de resolver la comida de la semana sin
-              salir de casa.
+              Hoy encontrás alimentos seleccionados para perros y gatos, con
+              entrega local y una tienda pensada para acompañar a hogares con
+              todo tipo de mascotas.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -92,7 +92,7 @@ export default async function Home() {
                 href="/catalogo"
                 className="rounded-xl bg-emerald-600 px-6 py-3 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
               >
-                Ver catálogo
+                Ver productos disponibles
               </Link>
               <a
                 href="#zonas"
@@ -142,7 +142,7 @@ export default async function Home() {
       </section>
 
       <section className="px-6 py-10">
-        <div className="mx-auto grid max-w-6xl gap-4 sm:grid-cols-3">
+        <div className="mx-auto grid max-w-6xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-xl border border-slate-200 bg-white p-5">
             <p className="font-semibold text-slate-900">Compra rápida</p>
             <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -150,17 +150,22 @@ export default async function Home() {
             </p>
           </div>
           <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-5">
-            <p className="font-semibold text-emerald-900">
-              {siteConfig.delivery.label}
-            </p>
+            <p className="font-semibold text-emerald-900">Entrega local</p>
             <p className="mt-2 text-sm leading-6 text-emerald-800">
-              Entrega local dentro de nuestra zona de cobertura.
+              {siteConfig.delivery.label} dentro de nuestra zona de cobertura.
             </p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-5">
-            <p className="font-semibold text-slate-900">Atención local</p>
+            <p className="font-semibold text-slate-900">Cuidado responsable</p>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Una tienda pensada para familias con mascotas en el este de San
+              Productos y procesos pensados para el bienestar cotidiano de tus
+              mascotas.
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-5">
+            <p className="font-semibold text-slate-900">Atención cercana</p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Una tienda local para familias con mascotas en el este de San
               José.
             </p>
           </div>
@@ -193,11 +198,15 @@ export default async function Home() {
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-600">
-                Categorías
+                Lo que encontrás hoy
               </p>
               <h2 className="mt-2 text-3xl font-bold tracking-tight">
-                Lo básico para tu mascota
+                Lo básico para perros y gatos
               </h2>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+                Amipet nace para acompañar a familias con todo tipo de mascotas.
+                El catálogo actual se concentra en perros y gatos.
+              </p>
             </div>
             <Link
               href="/catalogo"
@@ -232,11 +241,14 @@ export default async function Home() {
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-600">
-                Destacados
+                Productos disponibles hoy
               </p>
               <h2 className="mt-2 text-3xl font-bold tracking-tight">
-                Productos para empezar tu pedido
+                Alimento para perros y gatos
               </h2>
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                Una selección inicial de alimento para perros y gatos.
+              </p>
             </div>
             <Link
               href="/catalogo"
