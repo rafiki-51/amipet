@@ -355,3 +355,28 @@ El stock se restaura solo cuando:
 - [Mis Pedidos](./mis-pedidos.md)
 - [RPCs transaccionales](../base-de-datos/rpcs.md)
 - [Pagos](./pagos.md)
+
+
+## Presupuesto de Redis en el checkout
+
+La comprobacion de rate limiting tiene un presupuesto total de 1000 ms,
+incluyendo transporte y lectura de respuesta. Cada checkout utiliza un
+AbortController independiente, cero reintentos del SDK y una sola llamada EVAL
+sin autopipelining. Al vencer el plazo se cancela la solicitud HTTP y se permite
+continuar con las validaciones y la RPC existente. La cancelacion no revierte
+un script que el servidor Redis ya haya recibido.
+
+El script valida el contador y realiza una unica escritura SETEX, con valor y
+caducidad juntos. La clave sigue representando una ventana fija de 10 minutos;
+su TTL de 660 segundos es para limpieza. Solo contadores numericos, positivos
+y enteros seguros pueden bloquear: solicitudes 1 a 10 permitidas, 11 bloqueada.
+Errores, configuracion ausente, timeout y respuestas invalidas permiten continuar.
+Los logs contienen solo motivo controlado, endpoint y duracion/presupuesto;
+no se registran errores crudos, IPs, hashes de IP ni datos del pedido.
+
+Pruebas locales: `npm test`. El runner nativo de Node usa modulos aislados,
+entorno sintetico, transporte simulado y bloqueo de conexiones externas. No
+carga `.env.local` ni accede a Redis/Supabase. La ejecucion atomica del Lua se
+apoya en EVAL/SETEX; los mocks verifican su contrato, no ejecutan un servidor Lua.
+Las RPC, idempotencia, precios y stock no cambian. El presupuesto no limita la
+latencia de Supabase ni sustituye una proteccion contra abuso distribuido.

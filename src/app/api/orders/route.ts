@@ -4,6 +4,7 @@ import { paymentMethods } from "@/config/payment";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { isCustomerRole } from "@/lib/auth/roles";
 import {
+  REDIS_BUDGET_MS,
   createRateLimitHeaders,
   rateLimitByIp,
 } from "@/lib/rate-limit";
@@ -242,18 +243,18 @@ export async function POST(request: Request) {
     CHECKOUT_RATE_LIMIT,
   );
 
-  if ("error" in rateLimitResult && rateLimitResult.error) {
+  if (rateLimitResult.allowed && rateLimitResult.failureReason) {
     console.error("Checkout rate limiter failed open", {
       endpoint: CHECKOUT_RATE_LIMIT.endpoint,
-      ipHash: rateLimitResult.ipHash,
-      error: rateLimitResult.error,
+      reason: rateLimitResult.failureReason,
+      durationMs: rateLimitResult.durationMs,
+      budgetMs: REDIS_BUDGET_MS,
     });
   }
 
   if (!rateLimitResult.allowed) {
     console.warn("Checkout rate limit exceeded", {
       endpoint: CHECKOUT_RATE_LIMIT.endpoint,
-      ipHash: rateLimitResult.ipHash,
       limit: rateLimitResult.limit,
       windowSeconds: CHECKOUT_RATE_LIMIT.windowSeconds,
       timestamp: new Date().toISOString(),

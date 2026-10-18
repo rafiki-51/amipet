@@ -17,7 +17,8 @@ type RateLimitAllowedResult = {
   resetAt: number;
   retryAfter: number;
   ipHash: string;
-  error?: unknown;
+  failureReason?: "missing_config" | "timeout" | "redis_error" | "invalid_response";
+  durationMs?: number;
 };
 
 type RateLimitBlockedResult = {
@@ -33,25 +34,28 @@ export type RateLimitResult =
   | RateLimitAllowedResult
   | RateLimitBlockedResult;
 
-let redisClient: Redis | null = null;
+export const REDIS_BUDGET_MS = 1000;
 
-function getRedisClient() {
-  if (redisClient) {
-    return redisClient;
-  }
-
-  const url =
-    process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
-  const token =
-    process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN;
-
-  if (!url || !token) {
-    throw new Error("Missing Upstash Redis rate limit environment variables");
-  }
-
-  redisClient = new Redis({ url, token });
-  return redisClient;
-}
+// One final write includes the TTL. Lua errors do not roll back earlier writes,
+// so validate everything before SETEX instead of using INCR then EXPIRE.
+const COUNTER_SCRIPT = `
+local ttl = tonumber(ARGV[1])
+if not ttl or ttl < 1 or ttl ~= math.floor(ttl) then
+  return redis.error_reply("INVALID_TTL")
+end
+local raw = redis.call("GET", KEYS[1])
+local count = 0
+if raw then
+  count = tonumber(raw)
+  if not count or count < 1 or count ~= math.floor(count)
+    or count >= 9007199254740991 then
+    return redis.error_reply("INVALID_COUNTER")
+  end
+end
+local next_count = count + 1
+redis.call("SETEX", KEYS[1], ttl, string.format("%.0f", next_count))
+return next_count
+`;
 
 function cleanIpCandidate(value: string) {
   let candidate = value.trim().replace(/^"|"$/g, "");
@@ -98,7 +102,6 @@ function hashIp(ip: string) {
 function createFailOpenResult(
   headers: Headers,
   options: RateLimitOptions,
-  error: unknown,
 ): RateLimitAllowedResult {
   const now = Date.now();
   const resetAt =
@@ -113,7 +116,6 @@ function createFailOpenResult(
     resetAt,
     retryAfter: Math.max(1, Math.ceil((resetAt - now) / 1000)),
     ipHash: hashIp(getClientIp(headers)),
-    error,
   };
 }
 
@@ -121,8 +123,23 @@ export async function rateLimitByIp(
   headers: Headers,
   options: RateLimitOptions,
 ): Promise<RateLimitResult> {
+  const startedAt = performance.now();
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const failOpen = (
+    failureReason: NonNullable<RateLimitAllowedResult["failureReason"]>,
+  ) => ({
+    ...createFailOpenResult(headers, options),
+    failureReason,
+    durationMs: Math.max(0, Math.round(performance.now() - startedAt)),
+  });
+
   try {
-    const redis = getRedisClient();
+    const url = process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
+    const token =
+      process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN;
+    if (!url || !token) return failOpen("missing_config");
+
     const ipHash = hashIp(getClientIp(headers));
     const now = Date.now();
     const windowMs = options.windowSeconds * 1000;
@@ -130,12 +147,43 @@ export async function rateLimitByIp(
     const resetAt = (windowId + 1) * windowMs;
     const retryAfter = Math.max(1, Math.ceil((resetAt - now) / 1000));
     const key = `rate:${options.endpoint}:${ipHash}:${windowId}`;
-    const count = await redis.incr(key);
-
-    if (count === 1) {
-      await redis.expire(key, options.windowSeconds + 60);
+    const deadline = new Promise<{ kind: "timeout" }>((resolve) => {
+      timer = setTimeout(() => {
+        // Resolve first so an abort rejection cannot override the timeout reason.
+        resolve({ kind: "timeout" });
+        controller.abort();
+      }, Math.max(0, REDIS_BUDGET_MS - (performance.now() - startedAt)));
+    });
+    // Independent signal per checkout; never share an aborted client/controller.
+    const redis = new Redis({
+      url,
+      token,
+      signal: () => controller.signal,
+      retry: { retries: 0 },
+      enableAutoPipelining: false,
+    });
+    // Attach both handlers immediately: late completion/rejection is consumed.
+    const operation = Promise.resolve()
+      .then(() => {
+        if (controller.signal.aborted) throw new Error("Redis deadline elapsed");
+        return redis.eval(COUNTER_SCRIPT, [key], [options.windowSeconds + 60]);
+      })
+      .then(
+        (count) => ({ kind: "result" as const, count }),
+        () => ({ kind: "error" as const }),
+      );
+    const outcome = await Promise.race([deadline, operation]);
+    if (
+      outcome.kind === "timeout" ||
+      performance.now() - startedAt >= REDIS_BUDGET_MS
+    ) {
+      return failOpen("timeout");
     }
-
+    if (outcome.kind === "error") return failOpen("redis_error");
+    const count = outcome.count;
+    if (typeof count !== "number" || !Number.isSafeInteger(count) || count < 1) {
+      return failOpen("invalid_response");
+    }
     if (count > options.limit) {
       return {
         allowed: false,
@@ -146,7 +194,6 @@ export async function rateLimitByIp(
         ipHash,
       };
     }
-
     return {
       allowed: true,
       limit: options.limit,
@@ -155,8 +202,11 @@ export async function rateLimitByIp(
       retryAfter,
       ipHash,
     };
-  } catch (error) {
-    return createFailOpenResult(headers, options, error);
+  } catch {
+    return failOpen("redis_error");
+  } finally {
+    clearTimeout(timer);
+    controller.abort();
   }
 }
 
