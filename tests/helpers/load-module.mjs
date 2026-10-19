@@ -6,6 +6,7 @@ import http from 'node:http';
 import https from 'node:https';
 import tls from 'node:tls';
 import dgram from 'node:dgram';
+import { syncBuiltinESMExports } from 'node:module';
 import ts from 'typescript';
 
 // Fail closed at the transport boundary. No dotenv/Next env loader is imported.
@@ -14,6 +15,8 @@ globalThis.fetch = denyNetwork;
 net.Socket.prototype.connect = denyNetwork;
 http.request = http.get = https.request = https.get = denyNetwork;
 tls.connect = dgram.createSocket = denyNetwork;
+// Keep named ESM imports of built-in transports consistent with these guards.
+syncBuiltinESMExports();
 
 export const flush = async () => { for (let i = 0; i < 30; i++) await Promise.resolve(); };
 

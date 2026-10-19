@@ -436,18 +436,21 @@ export async function completePetMedication(
     medicationId,
   );
 
-  if (medicationError || !medication) {
+  if (medicationError || !medication || medication.status === "canceled") {
     redirectListWithError(petId, "complete");
   }
 
-  const { error } = await supabase
+  const { data: updatedRecord, error } = await supabase
     .from("pet_medications")
     .update({ status: "completed" })
     .eq("id", medicationId)
     .eq("pet_id", petId)
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .neq("status", "canceled")
+    .select("id")
+    .maybeSingle();
 
-  if (error) {
+  if (error || !updatedRecord) {
     console.error("Failed to complete pet medication", error);
     redirectListWithError(petId, "complete");
   }
@@ -496,18 +499,21 @@ export async function pausePetMedication(
     medicationId,
   );
 
-  if (medicationError || !medication) {
+  if (medicationError || !medication || medication.status === "canceled") {
     redirectListWithError(petId, "pause");
   }
 
-  const { error } = await supabase
+  const { data: updatedRecord, error } = await supabase
     .from("pet_medications")
     .update({ status: "paused" })
     .eq("id", medicationId)
     .eq("pet_id", petId)
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .neq("status", "canceled")
+    .select("id")
+    .maybeSingle();
 
-  if (error) {
+  if (error || !updatedRecord) {
     console.error("Failed to pause pet medication", error);
     redirectListWithError(petId, "pause");
   }
@@ -556,18 +562,21 @@ export async function reopenPetMedication(
     medicationId,
   );
 
-  if (medicationError || !medication) {
+  if (medicationError || !medication || medication.status === "canceled") {
     redirectListWithError(petId, "reopen");
   }
 
-  const { error } = await supabase
+  const { data: updatedRecord, error } = await supabase
     .from("pet_medications")
     .update({ status: "active" })
     .eq("id", medicationId)
     .eq("pet_id", petId)
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .neq("status", "canceled")
+    .select("id")
+    .maybeSingle();
 
-  if (error) {
+  if (error || !updatedRecord) {
     console.error("Failed to reopen pet medication", error);
     redirectListWithError(petId, "reopen");
   }

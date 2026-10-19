@@ -104,6 +104,10 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     return jsonError("Payload JSON invalido.", "INVALID_JSON", 400);
   }
 
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return jsonError("Payload invalido.", "INVALID_PAYLOAD", 400);
+  }
+
   if (!isOrderStatus(payload.status)) {
     return jsonError("Status invalido.", "INVALID_STATUS", 400);
   }
