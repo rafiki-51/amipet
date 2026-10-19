@@ -5,7 +5,7 @@ import { Footer } from "@/components/layout/Footer";
 import { CartProvider } from "@/context/CartContext";
 
 export const metadata: Metadata = {
-  title: "Amipet",
+  title: "RafaPet",
   description:
     "Venta local de alimento para mascotas con entrega en el este de San José, Costa Rica.",
 };

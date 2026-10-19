@@ -93,10 +93,10 @@ export function CustomerOrderDetailClient({ orderId }: { orderId: string }) {
 
     return (
       <MessageState
-        title="Tu sesion finalizo."
-        description="Inicia sesion para consultar este pedido."
+        title="Tu sesión finalizó."
+        description="Iniciá sesión para consultar este pedido."
         actionHref={`/login?redirect=${redirectPath}`}
-        actionLabel="Iniciar sesion"
+        actionLabel="Iniciar sesión"
       />
     );
   }
@@ -104,8 +104,8 @@ export function CustomerOrderDetailClient({ orderId }: { orderId: string }) {
   if (viewState === "forbidden") {
     return (
       <MessageState
-        title="No tenes acceso a esta seccion."
-        description="Mis Pedidos esta disponible unicamente para cuentas de cliente."
+        title="No tenés acceso a esta sección."
+        description="Mis Pedidos está disponible únicamente para cuentas de cliente."
         actionHref="/"
         actionLabel="Volver al inicio"
       />
@@ -115,7 +115,7 @@ export function CustomerOrderDetailClient({ orderId }: { orderId: string }) {
   if (viewState === "invalid") {
     return (
       <MessageState
-        title="El identificador del pedido no es valido."
+        title="El identificador del pedido no es válido."
         description="Volver a Mis Pedidos es la forma segura de consultar un pedido."
         actionHref="/mi-cuenta/pedidos"
         actionLabel="Volver a mis pedidos"
@@ -127,7 +127,7 @@ export function CustomerOrderDetailClient({ orderId }: { orderId: string }) {
     return (
       <MessageState
         title="No pudimos encontrar este pedido."
-        description="Es posible que el pedido no exista o no este vinculado a tu cuenta."
+        description="Es posible que el pedido no exista o no esté vinculado a tu cuenta."
         actionHref="/mi-cuenta/pedidos"
         actionLabel="Volver a mis pedidos"
       />
@@ -136,12 +136,12 @@ export function CustomerOrderDetailClient({ orderId }: { orderId: string }) {
 
   if (viewState === "error" || !order) {
     return (
-      <section className="rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center shadow-sm">
-        <h2 className="text-xl font-bold tracking-tight text-slate-950">
+      <section className="rounded-2xl border border-brand-dark/10 bg-white px-4 py-10 text-center sm:px-6 sm:py-12 shadow-sm">
+        <h2 className="break-words text-xl font-bold tracking-tight text-brand-dark">
           No pudimos cargar este pedido.
         </h2>
         <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-slate-600">
-          Intenta nuevamente en unos minutos.
+          Intentá nuevamente en unos minutos.
         </p>
         <button
           type="button"
@@ -149,7 +149,7 @@ export function CustomerOrderDetailClient({ orderId }: { orderId: string }) {
             setViewState("loading");
             setRequestKey((current) => current + 1);
           }}
-          className="mt-6 inline-flex justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
+          className="mt-6 inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-dark px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-dark/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple focus-visible:ring-offset-2"
         >
           Reintentar
         </button>
@@ -163,18 +163,18 @@ export function CustomerOrderDetailClient({ orderId }: { orderId: string }) {
 function DetailLoadingState() {
   return (
     <div
-      className="grid animate-pulse gap-5 lg:grid-cols-[minmax(0,1fr)_340px]"
+      className="grid min-w-0 animate-pulse gap-5 motion-reduce:animate-none lg:grid-cols-[minmax(0,1fr)_340px]"
       aria-live="polite"
     >
       <p className="sr-only">Cargando pedido...</p>
-      <div className="space-y-5">
-        <div className="h-44 rounded-2xl border border-slate-200 bg-white shadow-sm" />
-        <div className="h-80 rounded-2xl border border-slate-200 bg-white shadow-sm" />
-        <div className="h-64 rounded-2xl border border-slate-200 bg-white shadow-sm" />
+      <div className="min-w-0 space-y-5">
+        <div className="h-44 rounded-2xl border border-brand-dark/10 bg-white shadow-sm" />
+        <div className="h-80 rounded-2xl border border-brand-dark/10 bg-white shadow-sm" />
+        <div className="h-64 rounded-2xl border border-brand-dark/10 bg-white shadow-sm" />
       </div>
-      <div className="space-y-5">
-        <div className="h-64 rounded-2xl border border-slate-200 bg-white shadow-sm" />
-        <div className="h-72 rounded-2xl border border-slate-200 bg-white shadow-sm" />
+      <div className="min-w-0 space-y-5">
+        <div className="h-64 rounded-2xl border border-brand-dark/10 bg-white shadow-sm" />
+        <div className="h-72 rounded-2xl border border-brand-dark/10 bg-white shadow-sm" />
       </div>
     </div>
   );
@@ -192,8 +192,8 @@ function MessageState({
   actionLabel: string;
 }) {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center shadow-sm">
-      <h2 className="text-xl font-bold tracking-tight text-slate-950">
+    <section className="rounded-2xl border border-brand-dark/10 bg-white px-4 py-10 text-center sm:px-6 sm:py-12 shadow-sm">
+      <h2 className="break-words text-xl font-bold tracking-tight text-brand-dark">
         {title}
       </h2>
       <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-slate-600">
@@ -201,7 +201,7 @@ function MessageState({
       </p>
       <Link
         href={actionHref}
-        className="mt-6 inline-flex justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
+        className="mt-6 inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-dark px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-dark/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple focus-visible:ring-offset-2"
       >
         {actionLabel}
       </Link>

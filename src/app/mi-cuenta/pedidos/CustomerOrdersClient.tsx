@@ -80,14 +80,14 @@ export function CustomerOrdersClient() {
   if (viewState === "unauthenticated") {
     return (
       <MessageState
-        title="Tu sesion finalizo."
-        description="Inicia sesion para consultar los pedidos vinculados a tu cuenta."
+        title="Tu sesión finalizó."
+        description="Iniciá sesión para consultar los pedidos vinculados a tu cuenta."
         action={
           <Link
             href="/login?redirect=/mi-cuenta/pedidos"
-            className="inline-flex justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
+            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-dark px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-dark/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Iniciar sesion
+            Iniciar sesión
           </Link>
         }
       />
@@ -97,12 +97,12 @@ export function CustomerOrdersClient() {
   if (viewState === "forbidden") {
     return (
       <MessageState
-        title="No tenes acceso a esta seccion."
-        description="Mis Pedidos esta disponible unicamente para cuentas de cliente."
+        title="No tenés acceso a esta sección."
+        description="Mis Pedidos está disponible únicamente para cuentas de cliente."
         action={
           <Link
             href="/"
-            className="inline-flex justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+            className="inline-flex min-h-11 items-center justify-center rounded-xl border border-brand-dark/20 bg-white px-5 py-3 text-sm font-semibold text-brand-dark transition hover:bg-brand-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple focus-visible:ring-offset-2"
           >
             Volver al inicio
           </Link>
@@ -115,7 +115,7 @@ export function CustomerOrdersClient() {
     return (
       <MessageState
         title="No pudimos cargar tus pedidos."
-        description="Intenta nuevamente en unos minutos."
+        description="Intentá nuevamente en unos minutos."
         action={
           <button
             type="button"
@@ -123,7 +123,7 @@ export function CustomerOrdersClient() {
               setViewState("loading");
               setRequestKey((current) => current + 1);
             }}
-            className="inline-flex justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
+            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-dark px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-dark/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
           >
             Reintentar
           </button>
@@ -137,7 +137,7 @@ export function CustomerOrdersClient() {
   }
 
   return (
-    <div className="grid gap-5 lg:grid-cols-2">
+    <div className="grid min-w-0 gap-5 lg:grid-cols-2">
       {orders.map((order) => (
         <CustomerOrderCard key={order.id} order={order} />
       ))}
@@ -147,12 +147,12 @@ export function CustomerOrdersClient() {
 
 function OrdersLoadingState() {
   return (
-    <div className="grid gap-5 lg:grid-cols-2" aria-live="polite">
+    <div className="grid min-w-0 gap-5 lg:grid-cols-2" aria-live="polite">
       <p className="sr-only">Cargando pedidos...</p>
       {[0, 1, 2, 3].map((item) => (
         <div
           key={item}
-          className="h-72 animate-pulse rounded-2xl border border-slate-200 bg-white shadow-sm"
+          className="h-72 animate-pulse motion-reduce:animate-none rounded-2xl border border-brand-dark/10 bg-white shadow-sm"
         />
       ))}
     </div>
@@ -169,8 +169,8 @@ function MessageState({
   action: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center shadow-sm">
-      <h2 className="text-xl font-bold tracking-tight text-slate-950">
+    <section className="rounded-2xl border border-brand-dark/10 bg-white px-4 py-10 text-center sm:px-6 sm:py-12 shadow-sm">
+      <h2 className="break-words text-xl font-bold tracking-tight text-brand-dark">
         {title}
       </h2>
       <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-slate-600">

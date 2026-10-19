@@ -267,58 +267,59 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
     );
 
     return (
-      <main className="min-h-screen bg-white px-6 py-12 text-slate-900">
-        <section className="mx-auto max-w-3xl rounded-2xl border border-emerald-100 bg-emerald-50 p-6 text-center sm:p-10">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700">
+      <main className="min-h-screen bg-white px-4 py-10 text-slate-900 sm:px-6 sm:py-12 [&_a]:focus-visible:outline-2 [&_a]:focus-visible:outline-offset-4 [&_a]:focus-visible:outline-brand-purple">
+        <section className="mx-auto max-w-3xl rounded-2xl border border-brand-dark/10 bg-brand-light p-6 text-center sm:p-10">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-dark">
             Pedido recibido
           </p>
-          <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+          <h1 className="mt-3 break-words text-3xl font-bold tracking-tight text-brand-dark sm:text-4xl">
             Gracias, {confirmedOrder.customerName}
           </h1>
-          <p className="mt-4 text-slate-700">
+          <p className="mt-4 break-words leading-7 text-slate-700">
             Tu número de pedido es{" "}
-            <span className="font-bold text-emerald-800">
+            <span className="break-words font-bold text-brand-dark">
               {confirmedOrder.orderNumber}
             </span>
             .
           </p>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            Te contactaremos por WhatsApp para coordinar la disponibilidad,
-            entrega y los detalles finales del pago.
+            ¡Tu pedido quedó registrado! Te contactaremos por WhatsApp para
+            coordinar la entrega y el pago, según el método elegido. Recordá que
+            registrar el pedido no significa que el pago se haya realizado.
           </p>
 
-          <div className="mt-8 rounded-xl bg-white p-5 text-left shadow-sm">
-            <h2 className="font-semibold text-slate-900">Resumen del pedido</h2>
+          <div className="mt-8 rounded-xl border border-brand-dark/10 bg-white p-4 text-left shadow-sm sm:p-6">
+            <h2 className="font-semibold text-brand-dark">Resumen del pedido</h2>
             <div className="mt-4 space-y-3 text-sm text-slate-600">
-              <div className="flex justify-between gap-4">
+              <div className="flex flex-wrap justify-between gap-3">
                 <span>Productos</span>
-                <span className="font-medium text-slate-900">
+                <span className="break-words font-medium text-brand-dark">
                   {confirmedOrder.totalItems}
                 </span>
               </div>
-              <div className="flex justify-between gap-4">
-                <span>Método de pago</span>
-                <span className="text-right font-medium text-slate-900">
+              <div className="flex flex-wrap justify-between gap-3">
+                <span>Método de pago elegido</span>
+                <span className="text-right break-words font-medium text-brand-dark">
                   {selectedPayment?.label}
                 </span>
               </div>
-              <div className="flex justify-between gap-4">
+              <div className="flex flex-wrap justify-between gap-3">
                 <span>Subtotal</span>
-                <span className="font-medium text-slate-900">
+                <span className="break-words font-medium text-brand-dark">
                   {formatCurrency(confirmedOrder.subtotal)}
                 </span>
               </div>
-              <div className="flex justify-between gap-4">
-                <span>Delivery</span>
-                <span className="font-medium text-slate-900">
+              <div className="flex flex-wrap justify-between gap-3">
+                <span>Entrega</span>
+                <span className="break-words font-medium text-brand-dark">
                   {confirmedOrder.deliveryFee === 0
                     ? "Gratis"
                     : formatCurrency(confirmedOrder.deliveryFee)}
                 </span>
               </div>
-              <div className="flex justify-between gap-4 border-t border-slate-200 pt-3 text-base">
-                <span className="font-semibold text-slate-900">Total</span>
-                <span className="font-bold text-slate-900">
+              <div className="flex flex-wrap justify-between gap-3 border-t border-brand-dark/15 pt-3 text-base">
+                <span className="font-semibold text-brand-dark">Total</span>
+                <span className="break-words font-bold tabular-nums text-brand-dark">
                   {formatCurrency(confirmedOrder.total)}
                 </span>
               </div>
@@ -327,7 +328,7 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
 
           <Link
             href="/catalogo"
-            className="mt-8 inline-flex rounded-xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
+            className="mt-8 inline-flex min-h-11 items-center rounded-xl bg-brand-dark px-6 py-3 text-sm font-semibold text-white transition hover:bg-brand-dark/90"
           >
             Volver al catálogo
           </Link>
@@ -337,24 +338,25 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
   }
 
   return (
-    <main className="min-h-screen bg-white px-6 py-12 text-slate-900">
+    <main className="min-h-screen bg-white px-4 py-10 text-slate-900 sm:px-6 sm:py-12 [&_a]:focus-visible:outline-2 [&_a]:focus-visible:outline-offset-4 [&_a]:focus-visible:outline-brand-purple">
       <div className="mx-auto max-w-6xl">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-600">
-          Checkout
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-dark">
+          Tu pedido
         </p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight">
+        <h1 className="mt-2 text-3xl font-bold tracking-tight text-brand-dark sm:text-4xl">
           Confirmá tu pedido
         </h1>
         <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-          Este checkout funciona como confirmación local MVP. El total se
-          validará nuevamente al coordinar el pedido por WhatsApp.
+          Completá tus datos de entrega y elegí cómo preferís pagar. Al confirmar,
+          registraremos tu pedido y te contactaremos por WhatsApp para coordinar
+          los siguientes pasos.
         </p>
 
         {!isHydrated ? (
-          <p className="mt-8 text-slate-600">Cargando checkout...</p>
+          <p className="mt-8 rounded-2xl border border-brand-dark/10 bg-brand-light p-6 text-brand-dark">Cargando tu pedido...</p>
         ) : items.length === 0 ? (
-          <section className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center">
-            <h2 className="text-xl font-semibold text-slate-900">
+          <section className="mt-8 rounded-2xl border border-brand-dark/10 bg-brand-light px-6 py-10 text-center sm:p-10">
+            <h2 className="text-xl font-semibold text-brand-dark">
               Tu carrito está vacío
             </h2>
             <p className="mt-2 text-sm text-slate-600">
@@ -362,18 +364,18 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
             </p>
             <Link
               href="/catalogo"
-              className="mt-6 inline-flex rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
+              className="mt-6 inline-flex min-h-11 items-center rounded-xl bg-brand-dark px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-dark/90"
             >
               Ver catálogo
             </Link>
           </section>
         ) : (
-          <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_340px]">
+          <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
             <form
-              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
+              className="min-w-0 rounded-2xl border border-brand-dark/10 bg-white p-4 shadow-sm sm:p-6"
               onSubmit={handleSubmit}
             >
-              <div className="grid gap-5">
+              <div className="grid gap-6">
                 <label
                   className="absolute left-[-10000px] top-auto h-px w-px overflow-hidden"
                   aria-hidden="true"
@@ -398,13 +400,15 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
                   <input
                     type="text"
                     value={form.name}
+                    aria-invalid={Boolean(getFieldError("name"))}
+                    aria-describedby={getFieldError("name") ? "checkout-name-error" : undefined}
                     onChange={(event) => updateField("name", event.target.value)}
                     onBlur={() => touchField("name")}
-                    className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                    className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
                     autoComplete="name"
                   />
                   {getFieldError("name") ? (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p id="checkout-name-error" role="alert" className="mt-2 text-sm leading-6 text-red-700">
                       {getFieldError("name")}
                     </p>
                   ) : null}
@@ -417,15 +421,17 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
                   <input
                     type="tel"
                     value={form.phone}
+                    aria-invalid={Boolean(getFieldError("phone"))}
+                    aria-describedby={getFieldError("phone") ? "checkout-phone-error" : undefined}
                     onChange={(event) =>
                       updateField("phone", event.target.value)
                     }
                     onBlur={() => touchField("phone")}
-                    className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                    className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
                     autoComplete="tel"
                   />
                   {getFieldError("phone") ? (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p id="checkout-phone-error" role="alert" className="mt-2 text-sm leading-6 text-red-700">
                       {getFieldError("phone")}
                     </p>
                   ) : null}
@@ -437,11 +443,13 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
                   </span>
                   <select
                     value={form.district}
+                    aria-invalid={Boolean(getFieldError("district"))}
+                    aria-describedby={getFieldError("district") ? "checkout-district-error" : undefined}
                     onChange={(event) =>
                       updateField("district", event.target.value)
                     }
                     onBlur={() => touchField("district")}
-                    className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                    className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base outline-none transition focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
                   >
                     <option value="">Seleccioná una zona</option>
                     {coverageZones.map((zone) => (
@@ -451,7 +459,7 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
                     ))}
                   </select>
                   {getFieldError("district") ? (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p id="checkout-district-error" role="alert" className="mt-2 text-sm leading-6 text-red-700">
                       {getFieldError("district")}
                     </p>
                   ) : null}
@@ -463,15 +471,17 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
                   </span>
                   <textarea
                     value={form.address}
+                    aria-invalid={Boolean(getFieldError("address"))}
+                    aria-describedby={getFieldError("address") ? "checkout-address-error" : undefined}
                     onChange={(event) =>
                       updateField("address", event.target.value)
                     }
                     onBlur={() => touchField("address")}
-                    className="mt-2 min-h-28 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                    className="mt-2 min-h-28 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
                     autoComplete="street-address"
                   />
                   {getFieldError("address") ? (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p id="checkout-address-error" role="alert" className="mt-2 text-sm leading-6 text-red-700">
                       {getFieldError("address")}
                     </p>
                   ) : null}
@@ -487,7 +497,7 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
                     onChange={(event) =>
                       updateField("references", event.target.value)
                     }
-                    className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                    className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
                     placeholder="Color de portón, punto cercano, indicaciones"
                   />
                 </label>
@@ -499,12 +509,16 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
                   <textarea
                     value={form.notes}
                     onChange={(event) => updateField("notes", event.target.value)}
-                    className="mt-2 min-h-24 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                    className="mt-2 min-h-24 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
                     placeholder="Horario preferido o detalle adicional"
                   />
                 </label>
 
-                <fieldset>
+                <fieldset
+                  role="radiogroup"
+                  aria-invalid={Boolean(getFieldError("paymentMethod"))}
+                  aria-describedby={getFieldError("paymentMethod") ? "checkout-paymentMethod-error" : undefined}
+                >
                   <legend className="text-sm font-semibold text-slate-800">
                     Método de pago
                   </legend>
@@ -512,7 +526,7 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
                     {paymentMethods.map((method) => (
                       <label
                         key={method.id}
-                        className="flex cursor-pointer gap-3 rounded-xl border border-slate-300 p-4 transition has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50"
+                        className="flex min-w-0 cursor-pointer gap-3 rounded-xl border border-brand-dark/20 p-4 transition has-[:checked]:border-brand-dark has-[:checked]:bg-brand-light has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand-purple"
                       >
                         <input
                           type="radio"
@@ -529,7 +543,7 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
                           className="mt-1"
                         />
                         <span>
-                          <span className="block font-semibold text-slate-900">
+                          <span className="block break-words font-semibold text-brand-dark">
                             {method.label}
                           </span>
                           <span className="mt-1 block text-sm leading-6 text-slate-600">
@@ -540,7 +554,7 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
                     ))}
                   </div>
                   {getFieldError("paymentMethod") ? (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p id="checkout-paymentMethod-error" role="alert" className="mt-2 text-sm leading-6 text-red-700">
                       {getFieldError("paymentMethod")}
                     </p>
                   ) : null}
@@ -548,7 +562,7 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
               </div>
 
               {submitError ? (
-                <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700">
                   {submitError}
                 </p>
               ) : null}
@@ -556,59 +570,59 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
               <button
                 type="submit"
                 disabled={!canConfirm}
-                className="mt-6 w-full rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                className="mt-6 min-h-11 w-full rounded-xl bg-brand-dark px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-dark/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-purple disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-600 disabled:hover:bg-slate-200"
               >
-                {isSubmitting ? "Confirmando..." : "Confirmar pedido"}
+                {isSubmitting ? "Registrando pedido..." : "Confirmar pedido"}
               </button>
             </form>
 
-            <aside className="h-fit rounded-2xl border border-slate-200 bg-slate-50 p-5 lg:sticky lg:top-6">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Resumen del carrito
+            <aside className="h-fit min-w-0 rounded-2xl border border-brand-dark/10 bg-brand-light p-5 sm:p-6">
+              <h2 className="text-lg font-semibold text-brand-dark">
+                Resumen de tu pedido
               </h2>
               <div className="mt-5 space-y-4">
                 {items.map((item) => (
                   <div
                     key={item.product.id}
-                    className="flex justify-between gap-4 text-sm"
+                    className="flex flex-wrap justify-between gap-3 text-sm"
                   >
                     <div>
-                      <p className="font-medium text-slate-900">
+                      <p className="break-words font-medium text-brand-dark">
                         {item.product.name}
                       </p>
                       <p className="mt-1 text-slate-500">
                         {item.quantity} x {formatCurrency(item.product.price)}
                       </p>
                     </div>
-                    <p className="font-semibold text-slate-900">
+                    <p className="font-semibold text-brand-dark">
                       {formatCurrency(item.product.price * item.quantity)}
                     </p>
                   </div>
                 ))}
               </div>
 
-              <div className="mt-5 space-y-3 border-t border-slate-200 pt-4 text-sm text-slate-600">
-                <div className="flex justify-between gap-4">
+              <div className="mt-5 space-y-3 border-t border-brand-dark/15 pt-4 text-sm text-slate-600">
+                <div className="flex flex-wrap justify-between gap-3">
                   <span>Productos</span>
-                  <span className="font-medium text-slate-900">
+                  <span className="break-words font-medium text-brand-dark">
                     {totalItems}
                   </span>
                 </div>
-                <div className="flex justify-between gap-4">
-                  <span>Delivery</span>
-                  <span className="font-medium text-emerald-700">Gratis</span>
+                <div className="flex flex-wrap justify-between gap-3">
+                  <span>Entrega</span>
+                  <span className="font-medium text-brand-dark">Gratis</span>
                 </div>
-                <div className="flex justify-between gap-4 border-t border-slate-200 pt-3 text-base">
-                  <span className="font-semibold text-slate-900">Total</span>
-                  <span className="font-bold text-slate-900">
+                <div className="flex flex-wrap justify-between gap-3 border-t border-brand-dark/15 pt-3 text-base">
+                  <span className="font-semibold text-brand-dark">Total</span>
+                  <span className="break-words font-bold tabular-nums text-brand-dark">
                     {formatCurrency(subtotal)}
                   </span>
                 </div>
               </div>
 
               <p className="mt-4 text-xs leading-5 text-slate-500">
-                El total mostrado es informativo para este MVP local. La
-                confirmación final se coordina por WhatsApp.
+                Revisá los productos y el importe antes de confirmar. Al registrar
+                el pedido, validaremos los precios y la disponibilidad.
               </p>
             </aside>
           </div>

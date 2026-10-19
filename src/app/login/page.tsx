@@ -32,7 +32,7 @@ export default function LoginPage() {
     });
 
     if (error || !data.user) {
-      setErrorMessage("Correo o contrasena invalidos.");
+      setErrorMessage("Correo o contraseña inválidos.");
       setIsSubmitting(false);
       return;
     }
@@ -61,52 +61,52 @@ export default function LoginPage() {
       return;
     }
 
-    setErrorMessage("Tu cuenta no tiene un rol valido.");
+    setErrorMessage("Tu cuenta no tiene un rol válido.");
     setIsSubmitting(false);
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-12 text-slate-900">
-      <section className="mx-auto max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-600">
-          Amipet
+    <main className="min-h-screen bg-brand-light px-4 py-10 text-slate-900 sm:px-6 sm:py-12">
+      <section className="mx-auto w-full max-w-md rounded-2xl border border-brand-dark/10 bg-white p-5 shadow-sm sm:p-8">
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-purple">
+          RafaPet
         </p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight">
-          Iniciar sesion
+        <h1 className="mt-2 break-words text-3xl font-bold tracking-tight text-brand-dark">
+          Iniciar sesión
         </h1>
-        <p className="mt-3 text-sm leading-6 text-slate-600">
-          Ingresa para administrar tu cuenta y tus mascotas.
+        <p className="mt-3 text-sm leading-7 text-slate-600">
+          Ingresá para consultar tus pedidos y el expediente de tus mascotas.
         </p>
 
-        <form className="mt-8 grid gap-5" onSubmit={handleSubmit}>
+        <form className="mt-8 grid gap-6" onSubmit={handleSubmit}>
           <label className="block">
-            <span className="text-sm font-semibold text-slate-800">Email</span>
+            <span className="text-sm font-semibold text-brand-dark">Correo electrónico</span>
             <input
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+              className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
               autoComplete="email"
               required
             />
           </label>
 
           <label className="block">
-            <span className="text-sm font-semibold text-slate-800">
-              Contrasena
+            <span className="text-sm font-semibold text-brand-dark">
+              Contraseña
             </span>
             <input
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+              className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
               autoComplete="current-password"
               required
             />
           </label>
 
           {errorMessage ? (
-            <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <p role="alert" className="break-words rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700">
               {errorMessage}
             </p>
           ) : null}
@@ -114,15 +114,15 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+            className="min-h-11 w-full rounded-xl bg-brand-dark px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-dark/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-purple disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-600 disabled:hover:bg-slate-200"
           >
             {isSubmitting ? "Ingresando..." : "Ingresar"}
           </button>
         </form>
 
         <p className="mt-6 text-center text-sm text-slate-600">
-          No tenes cuenta?{" "}
-          <Link href="/registro" className="font-semibold text-emerald-700">
+          ¿No tenés cuenta?{" "}
+          <Link href="/registro" className="inline-flex min-h-11 items-center rounded-md font-semibold text-brand-dark hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-purple">
             Crear cuenta
           </Link>
         </p>

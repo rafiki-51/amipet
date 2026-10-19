@@ -26,9 +26,9 @@ export function SignOutButton() {
       type="button"
       onClick={() => void handleSignOut()}
       disabled={isSigningOut}
-      className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+      className="min-h-11 shrink-0 rounded-xl border border-brand-dark/20 bg-white px-4 py-3 text-sm font-semibold text-brand-dark transition hover:bg-brand-light focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-purple disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-500 disabled:hover:bg-slate-100"
     >
-      {isSigningOut ? "Cerrando..." : "Cerrar sesion"}
+      {isSigningOut ? "Cerrando..." : "Cerrar sesión"}
     </button>
   );
 }

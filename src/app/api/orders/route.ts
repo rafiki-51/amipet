@@ -280,6 +280,10 @@ export async function POST(request: Request) {
     return jsonError("Payload JSON invalido.", "INVALID_JSON", 400);
   }
 
+  if (!isRecord(payload)) {
+    return jsonError("Payload invalido.", "INVALID_PAYLOAD", 400);
+  }
+
   const customer = isRecord(payload.customer) ? payload.customer : null;
   const delivery = isRecord(payload.delivery) ? payload.delivery : null;
   const name = getTrimmedString(customer?.name);

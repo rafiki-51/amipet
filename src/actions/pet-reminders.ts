@@ -500,11 +500,11 @@ export async function completePetReminder(petId: string, reminderId: string) {
     reminderId,
   );
 
-  if (reminderError || !reminder) {
+  if (reminderError || !reminder || reminder.status === "canceled") {
     redirectListWithError(petId, "complete");
   }
 
-  const { error } = await supabase
+  const { data: updatedRecord, error } = await supabase
     .from("pet_reminders")
     .update({
       status: "completed",
@@ -512,9 +512,12 @@ export async function completePetReminder(petId: string, reminderId: string) {
     })
     .eq("id", reminderId)
     .eq("pet_id", petId)
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .neq("status", "canceled")
+    .select("id")
+    .maybeSingle();
 
-  if (error) {
+  if (error || !updatedRecord) {
     console.error("Failed to complete pet reminder", error);
     redirectListWithError(petId, "complete");
   }
@@ -560,11 +563,11 @@ export async function reopenPetReminder(petId: string, reminderId: string) {
     reminderId,
   );
 
-  if (reminderError || !reminder) {
+  if (reminderError || !reminder || reminder.status === "canceled") {
     redirectListWithError(petId, "reopen");
   }
 
-  const { error } = await supabase
+  const { data: updatedRecord, error } = await supabase
     .from("pet_reminders")
     .update({
       status: "pending",
@@ -572,9 +575,12 @@ export async function reopenPetReminder(petId: string, reminderId: string) {
     })
     .eq("id", reminderId)
     .eq("pet_id", petId)
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .neq("status", "canceled")
+    .select("id")
+    .maybeSingle();
 
-  if (error) {
+  if (error || !updatedRecord) {
     console.error("Failed to reopen pet reminder", error);
     redirectListWithError(petId, "reopen");
   }
