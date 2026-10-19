@@ -271,15 +271,15 @@ export function AdminPedidosClient() {
   const deliveredOrders = orders.filter((order) => order.status === "entregado").length;
 
   return (
-    <main className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
+    <main className="min-h-screen bg-brand-light/50">
+      <header className="border-b border-brand-dark/10 bg-white">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-emerald-600">
-              Admin Amipet
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brand-dark">
+              Administración RafaPet
             </p>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
-              Gestion de pedidos
+            <h1 className="mt-2 text-3xl font-bold tracking-tight text-brand-dark">
+              Gestión de pedidos
             </h1>
             <p className="mt-2 max-w-3xl text-sm text-slate-600">
               Panel protegido para administradores y operadores.
@@ -289,7 +289,7 @@ export function AdminPedidosClient() {
             <button
               type="button"
               onClick={() => void fetchOrders()}
-              className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-emerald-400 hover:text-emerald-700"
+              className="min-h-11 rounded-xl border border-brand-dark/20 bg-white px-4 py-2 text-sm font-semibold text-brand-dark transition hover:border-brand-dark/40 hover:bg-brand-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple focus-visible:ring-offset-2"
             >
               Actualizar
             </button>
@@ -298,32 +298,32 @@ export function AdminPedidosClient() {
         </div>
       </header>
 
-      <section className="mx-auto grid max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[minmax(0,420px)_1fr] lg:px-8">
-        <div className="space-y-4">
+      <section className="mx-auto grid max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:px-8">
+        <div className="min-w-0 space-y-4">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2">
-            <div className="rounded-2xl border border-slate-200 bg-white p-4">
+            <div className="rounded-2xl border border-brand-dark/10 bg-white p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                 Total filtrado
               </p>
-              <p className="mt-2 text-2xl font-bold text-slate-950">{totalOrders}</p>
+              <p className="mt-2 text-2xl font-bold tabular-nums text-brand-dark">{totalOrders}</p>
             </div>
             <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">
-                Pendientes pagina
+                Pendientes en esta página
               </p>
-              <p className="mt-2 text-2xl font-bold text-amber-800">{receivedOrders}</p>
+              <p className="mt-2 text-2xl font-bold tabular-nums text-amber-800">{receivedOrders}</p>
             </div>
             <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
-                Preparando pagina
+                Preparando en esta página
               </p>
-              <p className="mt-2 text-2xl font-bold text-sky-800">{preparingOrders}</p>
+              <p className="mt-2 text-2xl font-bold tabular-nums text-sky-800">{preparingOrders}</p>
             </div>
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
-                Entregados pagina
+                Entregados en esta página
               </p>
-              <p className="mt-2 text-2xl font-bold text-emerald-800">{deliveredOrders}</p>
+              <p className="mt-2 text-2xl font-bold tabular-nums text-emerald-800">{deliveredOrders}</p>
             </div>
           </div>
 
@@ -334,14 +334,14 @@ export function AdminPedidosClient() {
           />
 
           {error ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-700 [overflow-wrap:anywhere]">
               {error}
             </div>
           ) : null}
 
           <div className="space-y-3">
             {loading ? (
-              <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
+              <div className="rounded-2xl border border-brand-dark/10 bg-white p-6 text-sm text-slate-600">
                 Cargando pedidos...
               </div>
             ) : orders.length > 0 ? (
@@ -354,23 +354,23 @@ export function AdminPedidosClient() {
                 />
               ))
             ) : (
-              <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
+              <div className="rounded-2xl border border-brand-dark/10 bg-white p-6 text-sm text-slate-600">
                 No hay pedidos que coincidan con los filtros actuales.
               </div>
             )}
           </div>
 
-          <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 rounded-2xl border border-brand-dark/10 bg-white p-4 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
             <p>
-              Pagina {pagination.page} de {pagination.totalPages} ·{" "}
-              {pageOrders} pedidos en esta pagina
+              Página {pagination.page} de {pagination.totalPages} ·{" "}
+              {pageOrders} pedidos en esta página
             </p>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button
                 type="button"
                 disabled={loading || !pagination.hasPreviousPage}
                 onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
-                className="rounded-full border border-slate-300 px-4 py-2 font-semibold text-slate-700 transition hover:border-emerald-400 hover:text-emerald-700 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+                className="min-h-11 rounded-xl border border-brand-dark/20 bg-white px-4 py-2 font-semibold text-brand-dark transition hover:border-brand-dark/40 hover:bg-brand-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:border-brand-dark/10 disabled:bg-slate-100 disabled:text-slate-500"
               >
                 Anterior
               </button>
@@ -378,7 +378,7 @@ export function AdminPedidosClient() {
                 type="button"
                 disabled={loading || !pagination.hasNextPage}
                 onClick={() => setPage((currentPage) => currentPage + 1)}
-                className="rounded-full border border-slate-300 px-4 py-2 font-semibold text-slate-700 transition hover:border-emerald-400 hover:text-emerald-700 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+                className="min-h-11 rounded-xl border border-brand-dark/20 bg-white px-4 py-2 font-semibold text-brand-dark transition hover:border-brand-dark/40 hover:bg-brand-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:border-brand-dark/10 disabled:bg-slate-100 disabled:text-slate-500"
               >
                 Siguiente
               </button>
@@ -395,7 +395,7 @@ export function AdminPedidosClient() {
             isUpdatingPayment={updatingPayment}
           />
         ) : (
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
+          <section className="rounded-2xl border border-brand-dark/10 bg-white p-6 text-sm text-slate-600">
             Selecciona un pedido para ver el detalle.
           </section>
         )}

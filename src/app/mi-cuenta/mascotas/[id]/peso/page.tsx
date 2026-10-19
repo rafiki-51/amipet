@@ -30,7 +30,7 @@ type PesoPageProps = {
 
 const errorMessages: Record<string, string> = {
   delete: "No pudimos eliminar el registro de peso. Intentalo nuevamente.",
-  archived: "Esta mascota esta archivada y solo permite consulta.",
+  archived: "Esta mascota está archivada y solo permite consulta.",
 };
 
 function displayValue(value: string | number | null | undefined) {
@@ -114,39 +114,39 @@ export default async function PesoPage({ params, searchParams }: PesoPageProps) 
     : null;
 
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
-      <div className="mx-auto max-w-5xl">
+    <main className="min-h-screen bg-brand-light/50 px-4 py-8 text-slate-900 sm:px-6 sm:py-10">
+      <div className="mx-auto min-w-0 max-w-5xl">
         <div className="mb-6">
           <Link
             href={`/mi-cuenta/mascotas/${pet.id}`}
-            className="text-sm font-semibold text-emerald-700 hover:text-emerald-800"
+            className="inline-flex min-h-11 items-center rounded-lg text-sm font-semibold text-brand-dark transition hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple focus-visible:ring-offset-2"
           >
             Volver a la mascota
           </Link>
         </div>
 
-        <header className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-600">
+        <header className="min-w-0 rounded-2xl border border-brand-dark/10 bg-white p-4 shadow-sm sm:p-8">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-dark">
             Historial de peso
           </p>
           <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            <div className="min-w-0">
+              <h1 className="text-3xl font-bold tracking-tight text-brand-dark [overflow-wrap:anywhere] sm:text-4xl">
                 Historial de peso
               </h1>
-              <p className="mt-3 text-sm leading-6 text-slate-600">
+              <p className="mt-3 text-sm leading-6 text-slate-600 [overflow-wrap:anywhere]">
                 {displayValue(pet.name)}
               </p>
               {isArchived ? (
                 <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-800">
-                  Esta mascota esta archivada. El historial queda disponible
+                  Esta mascota está archivada. El historial queda disponible
                   solo para consulta.
                 </p>
               ) : null}
             </div>
-            <div className="flex flex-col gap-3 sm:items-end">
+            <div className="flex min-w-0 flex-col gap-3 sm:items-end">
               <div className="flex flex-wrap gap-2 sm:justify-end">
-                <span className="inline-flex rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800">
+                <span className="inline-flex max-w-full rounded-full bg-brand-light px-4 py-2 text-sm font-semibold text-brand-dark [overflow-wrap:anywhere]">
                   {displayValue(pet.species)}
                 </span>
                 {isArchived ? (
@@ -158,7 +158,7 @@ export default async function PesoPage({ params, searchParams }: PesoPageProps) 
               {!isArchived ? (
                 <Link
                   href={`/mi-cuenta/mascotas/${pet.id}/peso/nuevo`}
-                  className="inline-flex justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-dark px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-dark/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple focus-visible:ring-offset-2"
                 >
                   Agregar registro
                 </Link>
@@ -167,43 +167,43 @@ export default async function PesoPage({ params, searchParams }: PesoPageProps) 
           </div>
         </header>
 
-        <section className="mt-5 grid gap-5 sm:grid-cols-3">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section className="mt-5 grid min-w-0 gap-5 sm:grid-cols-3">
+          <div className="min-w-0 rounded-2xl border border-brand-dark/10 bg-white p-4 shadow-sm sm:p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-              Ultimo peso
+              Último peso
             </p>
-            <p className="mt-3 text-2xl font-bold tracking-tight text-slate-950">
+            <p className="mt-3 text-2xl font-bold tabular-nums tracking-tight text-brand-dark [overflow-wrap:anywhere]">
               {latestLog ? formatWeight(latestLog.weight) : "Pendiente"}
             </p>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="min-w-0 rounded-2xl border border-brand-dark/10 bg-white p-4 shadow-sm sm:p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-              Ultima medicion
+              Última medición
             </p>
-            <p className="mt-3 text-2xl font-bold tracking-tight text-slate-950">
+            <p className="mt-3 text-2xl font-bold tabular-nums tracking-tight text-brand-dark [overflow-wrap:anywhere]">
               {latestLog ? formatDate(latestLog.measured_at) : "Pendiente"}
             </p>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="min-w-0 rounded-2xl border border-brand-dark/10 bg-white p-4 shadow-sm sm:p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
               Total registros
             </p>
-            <p className="mt-3 text-2xl font-bold tracking-tight text-slate-950">
+            <p className="mt-3 text-2xl font-bold tabular-nums tracking-tight text-brand-dark [overflow-wrap:anywhere]">
               {weightLogs.length}
             </p>
           </div>
         </section>
 
         {errorMessage ? (
-          <p className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <p className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700 [overflow-wrap:anywhere]">
             {errorMessage}
           </p>
         ) : null}
 
-        <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section className="mt-5 min-w-0 rounded-2xl border border-brand-dark/10 bg-white p-4 shadow-sm sm:p-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h2 className="text-xl font-bold tracking-tight">Registros</h2>
+            <div className="min-w-0">
+              <h2 className="text-xl font-bold tracking-tight text-brand-dark">Registros</h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
                 Mediciones guardadas para el seguimiento de peso de esta
                 mascota.
@@ -212,13 +212,13 @@ export default async function PesoPage({ params, searchParams }: PesoPageProps) 
           </div>
 
           {weightLogs.length === 0 ? (
-            <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
-              <h3 className="text-lg font-bold tracking-tight">
-                Aun no hay registros de peso.
+            <div className="mt-6 rounded-2xl border border-dashed border-brand-dark/20 bg-brand-light/50 px-4 py-10 sm:px-6 text-center">
+              <h3 className="text-lg font-bold tracking-tight text-brand-dark">
+                Aún no hay registros de peso.
               </h3>
               <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-600">
-                Cuando agregues mediciones, apareceran aqui ordenadas desde la
-                mas reciente.
+                Cuando agregues mediciones, aparecerán aquí ordenadas desde la
+                más reciente.
               </p>
             </div>
           ) : (
@@ -226,24 +226,24 @@ export default async function PesoPage({ params, searchParams }: PesoPageProps) 
               {weightLogs.map((log) => (
                 <article
                   key={log.id}
-                  className="rounded-xl border border-slate-100 bg-slate-50 p-4"
+                  className="min-w-0 rounded-xl border border-brand-dark/10 bg-white p-4 shadow-sm sm:p-5"
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <p className="text-lg font-bold tracking-tight text-slate-950">
+                    <div className="min-w-0">
+                      <p className="text-lg font-bold tracking-tight text-brand-dark">
                         {formatWeight(log.weight)}
                       </p>
-                      <p className="mt-1 text-sm font-semibold text-slate-700">
+                      <p className="mt-1 text-sm font-semibold text-slate-700 [overflow-wrap:anywhere]">
                         {formatDate(log.measured_at)}
                       </p>
                     </div>
-                    <div className="text-sm leading-6 text-slate-500 sm:text-right">
+                    <div className="min-w-0 text-sm leading-6 text-slate-600 [overflow-wrap:anywhere] sm:text-right">
                       <p>Creado: {formatDate(log.created_at)}</p>
                       <p>Actualizado: {formatDate(log.updated_at)}</p>
                       {!isArchived ? (
                         <Link
                           href={`/mi-cuenta/mascotas/${pet.id}/peso/${log.id}/editar`}
-                          className="mt-2 inline-flex font-semibold text-emerald-700 hover:text-emerald-800"
+                          className="mt-2 inline-flex min-h-11 items-center justify-center rounded-lg border border-brand-dark/20 px-4 py-2 font-semibold text-brand-dark transition hover:bg-brand-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple focus-visible:ring-offset-2"
                         >
                           Editar
                         </Link>
@@ -251,7 +251,7 @@ export default async function PesoPage({ params, searchParams }: PesoPageProps) 
                     </div>
                   </div>
                   {log.notes ? (
-                    <p className="mt-4 rounded-xl bg-white p-4 text-sm leading-6 text-slate-600">
+                    <p className="mt-4 rounded-xl bg-brand-light/60 p-4 text-sm leading-6 text-slate-600 [overflow-wrap:anywhere]">
                       {log.notes}
                     </p>
                   ) : null}

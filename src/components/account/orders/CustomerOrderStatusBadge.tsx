@@ -23,7 +23,7 @@ export function getCustomerOrderStatusLabel(status: OrderStatus) {
 export function CustomerOrderStatusBadge({ status }: { status: OrderStatus }) {
   return (
     <span
-      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[status]}`}
+      className={`inline-flex max-w-full items-center justify-center rounded-full border border-current/15 px-3 py-1.5 text-center text-xs font-semibold leading-5 [overflow-wrap:anywhere] ${statusStyles[status]}`}
     >
       {statusLabels[status]}
     </span>

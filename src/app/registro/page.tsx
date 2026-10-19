@@ -18,23 +18,23 @@ export default function RegistroPage() {
 
   function validateForm() {
     if (!fullName.trim()) {
-      return "Ingresa tu nombre completo.";
+      return "Ingresá tu nombre completo.";
     }
 
     if (!phone.trim()) {
-      return "Ingresa tu telefono.";
+      return "Ingresá tu teléfono.";
     }
 
     if (!email.trim()) {
-      return "Ingresa tu email.";
+      return "Ingresá tu email.";
     }
 
     if (password.length < 6) {
-      return "La contrasena debe tener al menos 6 caracteres.";
+      return "La contraseña debe tener al menos 6 caracteres.";
     }
 
     if (password !== confirmPassword) {
-      return "Las contrasenas no coinciden.";
+      return "Las contraseñas no coinciden.";
     }
 
     return null;
@@ -73,14 +73,14 @@ export default function RegistroPage() {
 
     if (error || !data.user) {
       setErrorMessage(
-        "No pudimos crear tu cuenta. Revisa los datos e intenta de nuevo.",
+        "No pudimos crear tu cuenta. Revisá los datos e intentá de nuevo.",
       );
       setIsSubmitting(false);
       return;
     }
 
     if (!data.session) {
-      setSuccessMessage("Revisa tu correo para confirmar tu cuenta.");
+      setSuccessMessage("Revisá tu correo para confirmar tu cuenta.");
       setIsSubmitting(false);
       return;
     }
@@ -90,69 +90,68 @@ export default function RegistroPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-12 text-slate-900">
-      <section className="mx-auto max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-600">
-          Amipet
+    <main className="min-h-screen bg-brand-light px-4 py-10 text-slate-900 sm:px-6 sm:py-12">
+      <section className="mx-auto w-full max-w-md rounded-2xl border border-brand-dark/10 bg-white p-5 shadow-sm sm:p-8">
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-purple">
+          RafaPet
         </p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight">
+        <h1 className="mt-2 break-words text-3xl font-bold tracking-tight text-brand-dark">
           Crear cuenta
         </h1>
-        <p className="mt-3 text-sm leading-6 text-slate-600">
-          Crea tu cuenta para administrar tus datos y preparar el perfil de tus
-          mascotas.
+        <p className="mt-3 text-sm leading-7 text-slate-600">
+          Creá tu cuenta para consultar tus pedidos y registrar a tus mascotas.
         </p>
 
-        <form className="mt-8 grid gap-5" onSubmit={handleSubmit}>
+        <form className="mt-8 grid gap-6" onSubmit={handleSubmit}>
           <label className="block">
-            <span className="text-sm font-semibold text-slate-800">
+            <span className="text-sm font-semibold text-brand-dark">
               Nombre completo
             </span>
             <input
               type="text"
               value={fullName}
               onChange={(event) => setFullName(event.target.value)}
-              className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+              className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-dark focus:ring-2 focus:ring-brand-dark/20"
               autoComplete="name"
               required
             />
           </label>
 
           <label className="block">
-            <span className="text-sm font-semibold text-slate-800">
-              Telefono
+            <span className="text-sm font-semibold text-brand-dark">
+              Teléfono
             </span>
             <input
               type="tel"
               value={phone}
               onChange={(event) => setPhone(event.target.value)}
-              className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+              className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-dark focus:ring-2 focus:ring-brand-dark/20"
               autoComplete="tel"
               required
             />
           </label>
 
           <label className="block">
-            <span className="text-sm font-semibold text-slate-800">Email</span>
+            <span className="text-sm font-semibold text-brand-dark">Correo electrónico</span>
             <input
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+              className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-dark focus:ring-2 focus:ring-brand-dark/20"
               autoComplete="email"
               required
             />
           </label>
 
           <label className="block">
-            <span className="text-sm font-semibold text-slate-800">
-              Contrasena
+            <span className="text-sm font-semibold text-brand-dark">
+              Contraseña
             </span>
             <input
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+              className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-dark focus:ring-2 focus:ring-brand-dark/20"
               autoComplete="new-password"
               minLength={6}
               required
@@ -160,14 +159,14 @@ export default function RegistroPage() {
           </label>
 
           <label className="block">
-            <span className="text-sm font-semibold text-slate-800">
-              Confirmar contrasena
+            <span className="text-sm font-semibold text-brand-dark">
+              Confirmar contraseña
             </span>
             <input
               type="password"
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
-              className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+              className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-dark focus:ring-2 focus:ring-brand-dark/20"
               autoComplete="new-password"
               minLength={6}
               required
@@ -175,13 +174,13 @@ export default function RegistroPage() {
           </label>
 
           {errorMessage ? (
-            <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <p className="break-words rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700">
               {errorMessage}
             </p>
           ) : null}
 
           {successMessage ? (
-            <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+            <p className="break-words rounded-xl border border-brand-dark/20 bg-brand-light px-4 py-3 text-sm leading-6 text-brand-dark">
               {successMessage}
             </p>
           ) : null}
@@ -189,7 +188,7 @@ export default function RegistroPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+            className="min-h-11 w-full rounded-xl bg-brand-dark px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-dark/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-purple disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-600 disabled:hover:bg-slate-200"
           >
             {isSubmitting ? "Creando cuenta..." : "Crear cuenta"}
           </button>

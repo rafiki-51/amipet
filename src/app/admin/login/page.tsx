@@ -29,7 +29,7 @@ export default function AdminLoginPage() {
     });
 
     if (error) {
-      setErrorMessage("Credenciales invalidas");
+      setErrorMessage("Credenciales inválidas");
       setIsSubmitting(false);
       return;
     }
@@ -39,47 +39,47 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-12 text-slate-900">
-      <section className="mx-auto max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-600">
-          Admin Amipet
+    <main className="min-h-screen bg-brand-light px-4 py-10 text-slate-900 sm:px-6 sm:py-12">
+      <section className="mx-auto w-full max-w-md rounded-2xl border border-brand-dark/10 bg-white p-5 shadow-sm sm:p-8">
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-purple">
+          Administración RafaPet
         </p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight">
-          Iniciar sesion
+        <h1 className="mt-2 break-words text-3xl font-bold tracking-tight text-brand-dark">
+          Iniciar sesión
         </h1>
-        <p className="mt-3 text-sm leading-6 text-slate-600">
+        <p className="mt-3 text-sm leading-7 text-slate-600">
           Acceso para administrar pedidos reales de la tienda.
         </p>
 
-        <form className="mt-8 grid gap-5" onSubmit={handleSubmit}>
+        <form className="mt-8 grid gap-6" onSubmit={handleSubmit}>
           <label className="block">
-            <span className="text-sm font-semibold text-slate-800">Email</span>
+            <span className="text-sm font-semibold text-brand-dark">Email</span>
             <input
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+              className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-dark focus:ring-2 focus:ring-brand-dark/20"
               autoComplete="email"
               required
             />
           </label>
 
           <label className="block">
-            <span className="text-sm font-semibold text-slate-800">
-              Password
+            <span className="text-sm font-semibold text-brand-dark">
+              Contraseña
             </span>
             <input
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+              className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-dark focus:ring-2 focus:ring-brand-dark/20"
               autoComplete="current-password"
               required
             />
           </label>
 
           {errorMessage ? (
-            <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <p className="break-words rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700">
               {errorMessage}
             </p>
           ) : null}
@@ -87,7 +87,7 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+            className="min-h-11 w-full rounded-xl bg-brand-dark px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-dark/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-purple disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-600 disabled:hover:bg-slate-200"
           >
             {isSubmitting ? "Ingresando..." : "Ingresar"}
           </button>

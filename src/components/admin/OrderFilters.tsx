@@ -23,9 +23,9 @@ type OrderFiltersProps = {
 
 export function OrderFilters({ filters, zones, onChange }: OrderFiltersProps) {
   return (
-    <section className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-2">
-      <label className="block">
-        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+    <section className="grid min-w-0 gap-4 rounded-2xl border border-brand-dark/10 bg-white p-4 sm:grid-cols-2">
+      <label className="block min-w-0">
+        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-brand-dark">
           Estado
         </span>
         <select
@@ -36,7 +36,7 @@ export function OrderFilters({ filters, zones, onChange }: OrderFiltersProps) {
               status: event.target.value as OrderFilterState["status"],
             })
           }
-          className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+          className="mt-2 min-h-11 w-full min-w-0 max-w-full rounded-xl border border-brand-dark/25 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-600"
         >
           <option value="todos">Todos</option>
           {orderStatuses.map((status) => (
@@ -47,8 +47,8 @@ export function OrderFilters({ filters, zones, onChange }: OrderFiltersProps) {
         </select>
       </label>
 
-      <label className="block">
-        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+      <label className="block min-w-0">
+        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-brand-dark">
           Zona
         </span>
         <select
@@ -59,7 +59,7 @@ export function OrderFilters({ filters, zones, onChange }: OrderFiltersProps) {
               district: event.target.value,
             })
           }
-          className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+          className="mt-2 min-h-11 w-full min-w-0 max-w-full rounded-xl border border-brand-dark/25 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-600"
         >
           <option value="todas">Todas</option>
           {zones.map((zone) => (
@@ -70,9 +70,9 @@ export function OrderFilters({ filters, zones, onChange }: OrderFiltersProps) {
         </select>
       </label>
 
-      <label className="block">
-        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-          Metodo
+      <label className="block min-w-0">
+        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-brand-dark">
+          Método
         </span>
         <select
           value={filters.paymentMethod}
@@ -83,7 +83,7 @@ export function OrderFilters({ filters, zones, onChange }: OrderFiltersProps) {
                 .value as OrderFilterState["paymentMethod"],
             })
           }
-          className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+          className="mt-2 min-h-11 w-full min-w-0 max-w-full rounded-xl border border-brand-dark/25 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-600"
         >
           <option value="todos">Todos</option>
           {paymentMethods.map((method) => (
@@ -94,8 +94,8 @@ export function OrderFilters({ filters, zones, onChange }: OrderFiltersProps) {
         </select>
       </label>
 
-      <label className="block">
-        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+      <label className="block min-w-0">
+        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-brand-dark">
           Pago
         </span>
         <select
@@ -107,7 +107,7 @@ export function OrderFilters({ filters, zones, onChange }: OrderFiltersProps) {
                 .value as OrderFilterState["paymentStatus"],
             })
           }
-          className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+          className="mt-2 min-h-11 w-full min-w-0 max-w-full rounded-xl border border-brand-dark/25 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-600"
         >
           <option value="todos">Todos</option>
           {paymentStatuses.map((status) => (

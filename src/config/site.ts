@@ -1,5 +1,5 @@
 export const siteConfig = {
-  name: "Amipet",
+  name: "RafaPet",
   description:
     "Venta local de alimento para mascotas con entrega en el este de San José, Costa Rica.",
   slogan: "Alimento para perros y gatos con entrega local.",

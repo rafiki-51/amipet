@@ -19,29 +19,29 @@ export function CustomerOrderTimeline({
   );
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-      <h2 className="text-xl font-bold tracking-tight text-slate-950">
+    <section className="min-w-0 rounded-2xl border border-brand-dark/10 bg-white p-5 shadow-sm sm:p-6">
+      <h2 className="text-xl font-bold tracking-tight text-brand-dark">
         Seguimiento
       </h2>
       {orderedTimeline.length === 0 ? (
-        <p className="mt-4 text-sm leading-6 text-slate-600">
-          Todavia no hay actualizaciones disponibles para este pedido.
+        <p className="mt-4 rounded-xl bg-brand-light p-4 text-sm leading-6 text-slate-600">
+          Todavía no hay actualizaciones disponibles para este pedido.
         </p>
       ) : (
-        <ol className="mt-6 space-y-5">
+        <ol className="mt-6 space-y-6">
           {orderedTimeline.map((entry, index) => (
             <li
               key={`${entry.status}-${entry.createdAt}-${index}`}
-              className="relative pl-7"
+              className="relative min-w-0 pl-7"
             >
-              <span className="absolute left-0 top-1.5 h-3 w-3 rounded-full bg-emerald-500" />
+              <span className="absolute left-0 top-1.5 h-3 w-3 rounded-full border-2 border-brand-dark bg-brand-light" />
               {index < orderedTimeline.length - 1 ? (
-                <span className="absolute left-[5px] top-5 h-[calc(100%+0.5rem)] w-px bg-emerald-200" />
+                <span className="absolute left-[5px] top-5 h-[calc(100%+0.75rem)] w-px bg-brand-dark/20" />
               ) : null}
-              <p className="font-semibold text-slate-950">
+              <p className="font-semibold leading-6 text-brand-dark [overflow-wrap:anywhere]">
                 {getCustomerOrderStatusLabel(entry.status)}
               </p>
-              <p className="mt-1 text-sm text-slate-500">
+              <p className="mt-1 text-sm leading-6 text-slate-600 [overflow-wrap:anywhere]">
                 {formatDate(entry.createdAt)}
               </p>
             </li>

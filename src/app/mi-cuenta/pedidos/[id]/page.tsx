@@ -13,12 +13,12 @@ export default async function CustomerOrderDetailPage({
   const { id } = await params;
 
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
+    <main className="min-h-screen bg-brand-light/50 px-4 py-8 text-slate-900 sm:px-6 sm:py-10">
       <div className="mx-auto max-w-5xl">
         <div className="mb-6">
           <Link
             href="/mi-cuenta/pedidos"
-            className="text-sm font-semibold text-emerald-700 hover:text-emerald-800"
+            className="inline-flex min-h-11 items-center rounded-lg text-sm font-semibold text-brand-dark transition hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple focus-visible:ring-offset-2"
           >
             Volver a mis pedidos
           </Link>

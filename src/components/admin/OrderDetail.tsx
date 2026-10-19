@@ -101,13 +101,13 @@ export function OrderDetail({
   }
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="min-w-0 rounded-2xl border border-brand-dark/10 bg-white p-4 shadow-sm sm:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-600">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand-dark">
             Detalle del pedido
           </p>
-          <h2 className="mt-2 text-2xl font-bold text-slate-900">
+          <h2 className="mt-2 text-2xl font-bold text-brand-dark [overflow-wrap:anywhere]">
             {order.orderNumber}
           </h2>
           <p className="mt-1 text-sm text-slate-500">{createdAt}</p>
@@ -115,59 +115,59 @@ export function OrderDetail({
         <OrderStatusBadge status={order.status} />
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-xl bg-slate-50 p-4">
-          <h3 className="font-semibold text-slate-900">Cliente</h3>
-          <div className="mt-3 space-y-2 text-sm text-slate-600">
+      <div className="mt-6 grid min-w-0 gap-4 sm:grid-cols-2">
+        <div className="min-w-0 rounded-xl border border-brand-dark/5 bg-brand-light/50 p-4">
+          <h3 className="font-semibold text-brand-dark [overflow-wrap:anywhere]">Cliente</h3>
+          <div className="mt-3 space-y-3 text-sm leading-6 text-slate-600 [overflow-wrap:anywhere]">
             <p>
-              <span className="font-medium text-slate-900">Nombre:</span>{" "}
+              <span className="font-medium text-slate-900 [overflow-wrap:anywhere]">Nombre:</span>{" "}
               {order.customer.name}
             </p>
             <p>
-              <span className="font-medium text-slate-900">Telefono:</span>{" "}
+              <span className="font-medium text-slate-900 [overflow-wrap:anywhere]">Teléfono:</span>{" "}
               {order.customer.phone}
             </p>
             <p>
-              <span className="font-medium text-slate-900">Zona:</span>{" "}
+              <span className="font-medium text-slate-900 [overflow-wrap:anywhere]">Zona:</span>{" "}
               {order.delivery.zoneName}
             </p>
           </div>
         </div>
 
-        <div className="rounded-xl bg-slate-50 p-4">
-          <h3 className="font-semibold text-slate-900">Entrega</h3>
-          <div className="mt-3 space-y-2 text-sm text-slate-600">
+        <div className="min-w-0 rounded-xl border border-brand-dark/5 bg-brand-light/50 p-4">
+          <h3 className="font-semibold text-brand-dark [overflow-wrap:anywhere]">Entrega</h3>
+          <div className="mt-3 space-y-3 text-sm leading-6 text-slate-600 [overflow-wrap:anywhere]">
             <p>
-              <span className="font-medium text-slate-900">Direccion:</span>{" "}
+              <span className="font-medium text-slate-900 [overflow-wrap:anywhere]">Dirección:</span>{" "}
               {order.delivery.address}
             </p>
             <p>
-              <span className="font-medium text-slate-900">Referencias:</span>{" "}
+              <span className="font-medium text-slate-900 [overflow-wrap:anywhere]">Referencias:</span>{" "}
               {order.delivery.references || "Sin referencias"}
             </p>
           </div>
         </div>
       </div>
 
-      <div className="mt-6 rounded-xl border border-slate-200">
-        <div className="border-b border-slate-200 px-4 py-3">
-          <h3 className="font-semibold text-slate-900">Productos</h3>
+      <div className="mt-6 rounded-xl border border-brand-dark/10">
+        <div className="border-b border-brand-dark/10 px-4 py-3">
+          <h3 className="font-semibold text-brand-dark [overflow-wrap:anywhere]">Productos</h3>
         </div>
-        <div className="divide-y divide-slate-200">
+        <div className="divide-y divide-brand-dark/10">
           {order.items.map((item) => (
             <div
               key={item.id}
-              className="grid gap-2 px-4 py-3 text-sm sm:grid-cols-[1fr_auto]"
+              className="grid min-w-0 gap-3 px-4 py-4 text-sm sm:grid-cols-[minmax(0,1fr)_minmax(0,auto)]"
             >
-              <div>
-                <p className="font-medium text-slate-900">
+              <div className="min-w-0">
+                <p className="font-medium text-slate-900 [overflow-wrap:anywhere]">
                   {item.productName}
                 </p>
-                <p className="mt-1 text-slate-500">
+                <p className="mt-1 text-slate-600 [overflow-wrap:anywhere]">
                   {item.quantity} x {formatCurrency(item.unitPrice)}
                 </p>
               </div>
-              <p className="font-semibold text-slate-900">
+              <p className="font-semibold text-brand-dark [overflow-wrap:anywhere]">
                 {formatCurrency(item.subtotal)}
               </p>
             </div>
@@ -175,28 +175,28 @@ export function OrderDetail({
         </div>
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-xl bg-slate-50 p-4">
-          <h3 className="font-semibold text-slate-900">Pago y notas</h3>
-          <div className="mt-3 space-y-2 text-sm text-slate-600">
+      <div className="mt-6 grid min-w-0 gap-4 sm:grid-cols-2">
+        <div className="min-w-0 rounded-xl border border-brand-dark/5 bg-brand-light/50 p-4">
+          <h3 className="font-semibold text-brand-dark [overflow-wrap:anywhere]">Pago y notas</h3>
+          <div className="mt-3 space-y-3 text-sm leading-6 text-slate-600 [overflow-wrap:anywhere]">
             <p>
-              <span className="font-medium text-slate-900">Metodo:</span>{" "}
+              <span className="font-medium text-slate-900 [overflow-wrap:anywhere]">Método:</span>{" "}
               {paymentMethod?.label || order.paymentMethod}
             </p>
             <p>
-              <span className="font-medium text-slate-900">Estado:</span>{" "}
+              <span className="font-medium text-slate-900 [overflow-wrap:anywhere]">Estado:</span>{" "}
               {paymentStatusLabels[order.paymentStatus]}
             </p>
             {order.paymentStatus === "paid" ? (
               <>
                 <p>
-                  <span className="font-medium text-slate-900">
+                  <span className="font-medium text-slate-900 [overflow-wrap:anywhere]">
                     Confirmado:
                   </span>{" "}
                   {paidAt || "Sin fecha registrada"}
                 </p>
                 <p className="break-all">
-                  <span className="font-medium text-slate-900">
+                  <span className="font-medium text-slate-900 [overflow-wrap:anywhere]">
                     Confirmado por:
                   </span>{" "}
                   {order.paymentConfirmedBy || "Sin usuario registrado"}
@@ -208,32 +208,32 @@ export function OrderDetail({
                 type="button"
                 disabled={isUpdatingPayment || isUpdatingStatus}
                 onClick={requestPaymentConfirmation}
-                className="mt-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                className="mt-2 min-h-11 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-600"
               >
                 {isUpdatingPayment ? "Confirmando pago..." : "Confirmar pago"}
               </button>
             ) : null}
             <p>
-              <span className="font-medium text-slate-900">Notas:</span>{" "}
+              <span className="font-medium text-slate-900 [overflow-wrap:anywhere]">Notas:</span>{" "}
               {order.notes || "Sin notas"}
             </p>
             <p>
-              <span className="font-medium text-slate-900">Notas admin:</span>{" "}
+              <span className="font-medium text-slate-900 [overflow-wrap:anywhere]">Notas admin:</span>{" "}
               {order.adminNotes || "Sin notas"}
             </p>
           </div>
         </div>
 
-        <div className="rounded-xl bg-slate-50 p-4">
-          <h3 className="font-semibold text-slate-900">Totales</h3>
-          <div className="mt-3 space-y-2 text-sm text-slate-600">
-            <div className="flex justify-between gap-4">
+        <div className="min-w-0 rounded-xl border border-brand-dark/5 bg-brand-light/50 p-4">
+          <h3 className="font-semibold text-brand-dark [overflow-wrap:anywhere]">Totales</h3>
+          <div className="mt-3 space-y-3 text-sm leading-6 text-slate-600 [overflow-wrap:anywhere]">
+            <div className="flex flex-wrap justify-between gap-x-4 gap-y-1">
               <span>Subtotal</span>
-              <span className="font-medium text-slate-900">
+              <span className="font-medium text-slate-900 [overflow-wrap:anywhere]">
                 {formatCurrency(order.subtotal)}
               </span>
             </div>
-            <div className="flex justify-between gap-4">
+            <div className="flex flex-wrap justify-between gap-x-4 gap-y-1">
               <span>Delivery</span>
               <span className="font-medium text-emerald-700">
                 {order.deliveryFee === 0
@@ -241,9 +241,9 @@ export function OrderDetail({
                   : formatCurrency(order.deliveryFee)}
               </span>
             </div>
-            <div className="flex justify-between gap-4 border-t border-slate-200 pt-2 text-base">
-              <span className="font-semibold text-slate-900">Total</span>
-              <span className="font-bold text-slate-900">
+            <div className="flex flex-wrap justify-between gap-x-4 gap-y-1 border-t border-brand-dark/10 pt-2 text-base">
+              <span className="font-semibold text-brand-dark [overflow-wrap:anywhere]">Total</span>
+              <span className="font-bold tabular-nums text-brand-dark [overflow-wrap:anywhere]">
                 {formatCurrency(order.total)}
               </span>
             </div>
@@ -251,8 +251,8 @@ export function OrderDetail({
         </div>
       </div>
 
-      <div className="mt-6 rounded-xl border border-slate-200 p-4">
-        <h3 className="text-sm font-semibold text-slate-800">
+      <div className="mt-6 rounded-xl border border-brand-dark/10 p-4">
+        <h3 className="text-sm font-semibold text-brand-dark">
           Cambiar estado
         </h3>
 
@@ -284,7 +284,7 @@ export function OrderDetail({
                   }
                   rows={3}
                   placeholder="Motivo obligatorio para cancelar"
-                  className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-sm"
+                  className="mt-2 w-full min-w-0 max-w-full rounded-xl border border-brand-dark/25 bg-white px-3 py-3 text-sm leading-6 text-slate-900 outline-none transition focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-600"
                 />
               </label>
             ) : null}
@@ -300,7 +300,7 @@ export function OrderDetail({
                       cancellationReason.trim().length === 0)
                   }
                   onClick={() => requestStatusChange(nextStatus)}
-                  className={`rounded-xl px-4 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:bg-slate-300 ${
+                  className={`min-h-11 rounded-xl px-4 py-3 text-sm font-semibold text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-600 ${
                     nextStatus === "cancelado"
                       ? "bg-red-600 hover:bg-red-700"
                       : "bg-emerald-600 hover:bg-emerald-700"

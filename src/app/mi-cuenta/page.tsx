@@ -35,89 +35,88 @@ export default async function MiCuentaPage() {
       : "");
 
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
+    <main className="min-h-screen bg-brand-light px-4 py-10 text-slate-900 sm:px-6 sm:py-12 [&_a]:focus-visible:outline-2 [&_a]:focus-visible:outline-offset-4 [&_a]:focus-visible:outline-brand-purple">
       <div className="mx-auto max-w-5xl">
         <header className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-600">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-purple">
               Mi cuenta
             </p>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
+            <h1 className="mt-2 break-words text-3xl font-bold tracking-tight text-brand-dark sm:text-4xl">
               Hola, {displayValue(name)}
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              Administra tus datos de cliente y consulta el expediente digital
-              de tus mascotas.
+              Consultá tus datos, tus pedidos y el expediente digital de tus mascotas.
             </p>
           </div>
           <SignOutButton />
         </header>
 
-        <section className="mt-8 grid gap-5 lg:grid-cols-[1fr_360px]">
-          <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold tracking-tight">
+        <section className="mt-8 grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <article className="min-w-0 rounded-2xl border border-brand-dark/10 bg-white p-5 shadow-sm sm:p-6">
+            <h2 className="text-xl font-bold tracking-tight text-brand-dark">
               Datos del cliente
             </h2>
             <dl className="mt-6 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+              <div className="min-w-0 rounded-xl border border-brand-dark/10 bg-brand-light/50 p-4">
                 <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                   Nombre
                 </dt>
-                <dd className="mt-2 text-base font-semibold text-slate-950">
+                <dd className="mt-2 break-words text-base font-semibold text-brand-dark">
                   {displayValue(name)}
                 </dd>
               </div>
-              <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+              <div className="min-w-0 rounded-xl border border-brand-dark/10 bg-brand-light/50 p-4">
                 <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                   Email
                 </dt>
-                <dd className="mt-2 break-words text-base font-semibold text-slate-950">
+                <dd className="mt-2 break-words text-base font-semibold text-brand-dark">
                   {displayValue(email)}
                 </dd>
               </div>
-              <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+              <div className="min-w-0 rounded-xl border border-brand-dark/10 bg-brand-light/50 p-4">
                 <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  Telefono
+                  Teléfono
                 </dt>
-                <dd className="mt-2 text-base font-semibold text-slate-950">
+                <dd className="mt-2 break-words text-base font-semibold text-brand-dark">
                   {displayValue(phone)}
                 </dd>
               </div>
-              <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4">
-                <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">
+              <div className="min-w-0 rounded-xl border border-brand-purple/15 bg-brand-purple/5 p-4">
+                <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-purple">
                   Estado de cuenta
                 </dt>
-                <dd className="mt-2 text-base font-semibold text-emerald-950">
-                  Cuenta activa
+                <dd className="mt-2 break-words text-base font-semibold text-brand-dark">
+                  Mi información
                 </dd>
               </div>
             </dl>
           </article>
 
           <div className="grid gap-5">
-            <aside className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-xl font-bold tracking-tight">Mis pedidos</h2>
+            <aside className="min-w-0 rounded-2xl border border-brand-dark/10 bg-white p-5 shadow-sm sm:p-6">
+              <h2 className="text-xl font-bold tracking-tight text-brand-dark">Mis pedidos</h2>
               <p className="mt-3 text-sm leading-6 text-slate-600">
                 Consulta el estado y detalle de los pedidos vinculados a tu
                 cuenta.
               </p>
               <Link
                 href="/mi-cuenta/pedidos"
-                className="mt-6 inline-flex w-full justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-brand-dark px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-brand-dark/90"
               >
                 Ir a mis pedidos
               </Link>
             </aside>
 
-            <aside className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-xl font-bold tracking-tight">Mis mascotas</h2>
+            <aside className="min-w-0 rounded-2xl border border-brand-dark/10 bg-white p-5 shadow-sm sm:p-6">
+              <h2 className="text-xl font-bold tracking-tight text-brand-dark">Mis mascotas</h2>
               <p className="mt-3 text-sm leading-6 text-slate-600">
                 Consulta y administra los perfiles de tus mascotas desde un
                 solo lugar.
               </p>
               <Link
                 href="/mi-cuenta/mascotas"
-                className="mt-6 inline-flex w-full justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-100"
+                className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-brand-dark/20 bg-white px-5 py-3 text-center text-sm font-semibold text-brand-dark transition hover:bg-brand-light"
               >
                 Ir a mis mascotas
               </Link>
