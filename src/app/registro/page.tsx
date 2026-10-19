@@ -111,7 +111,7 @@ export default function RegistroPage() {
               type="text"
               value={fullName}
               onChange={(event) => setFullName(event.target.value)}
-              className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-dark focus:ring-2 focus:ring-brand-dark/20"
+              className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
               autoComplete="name"
               required
             />
@@ -125,7 +125,7 @@ export default function RegistroPage() {
               type="tel"
               value={phone}
               onChange={(event) => setPhone(event.target.value)}
-              className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-dark focus:ring-2 focus:ring-brand-dark/20"
+              className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
               autoComplete="tel"
               required
             />
@@ -137,7 +137,7 @@ export default function RegistroPage() {
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-dark focus:ring-2 focus:ring-brand-dark/20"
+              className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
               autoComplete="email"
               required
             />
@@ -151,7 +151,7 @@ export default function RegistroPage() {
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-dark focus:ring-2 focus:ring-brand-dark/20"
+              className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
               autoComplete="new-password"
               minLength={6}
               required
@@ -166,7 +166,7 @@ export default function RegistroPage() {
               type="password"
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
-              className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-dark focus:ring-2 focus:ring-brand-dark/20"
+              className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
               autoComplete="new-password"
               minLength={6}
               required
@@ -174,7 +174,7 @@ export default function RegistroPage() {
           </label>
 
           {errorMessage ? (
-            <p className="break-words rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700">
+            <p role="alert" className="break-words rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700">
               {errorMessage}
             </p>
           ) : null}

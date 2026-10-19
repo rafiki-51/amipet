@@ -400,13 +400,15 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
                   <input
                     type="text"
                     value={form.name}
+                    aria-invalid={Boolean(getFieldError("name"))}
+                    aria-describedby={getFieldError("name") ? "checkout-name-error" : undefined}
                     onChange={(event) => updateField("name", event.target.value)}
                     onBlur={() => touchField("name")}
-                    className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-dark focus:ring-2 focus:ring-brand-dark/20"
+                    className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
                     autoComplete="name"
                   />
                   {getFieldError("name") ? (
-                    <p className="mt-2 text-sm leading-6 text-red-700">
+                    <p id="checkout-name-error" role="alert" className="mt-2 text-sm leading-6 text-red-700">
                       {getFieldError("name")}
                     </p>
                   ) : null}
@@ -419,15 +421,17 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
                   <input
                     type="tel"
                     value={form.phone}
+                    aria-invalid={Boolean(getFieldError("phone"))}
+                    aria-describedby={getFieldError("phone") ? "checkout-phone-error" : undefined}
                     onChange={(event) =>
                       updateField("phone", event.target.value)
                     }
                     onBlur={() => touchField("phone")}
-                    className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-dark focus:ring-2 focus:ring-brand-dark/20"
+                    className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
                     autoComplete="tel"
                   />
                   {getFieldError("phone") ? (
-                    <p className="mt-2 text-sm leading-6 text-red-700">
+                    <p id="checkout-phone-error" role="alert" className="mt-2 text-sm leading-6 text-red-700">
                       {getFieldError("phone")}
                     </p>
                   ) : null}
@@ -439,11 +443,13 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
                   </span>
                   <select
                     value={form.district}
+                    aria-invalid={Boolean(getFieldError("district"))}
+                    aria-describedby={getFieldError("district") ? "checkout-district-error" : undefined}
                     onChange={(event) =>
                       updateField("district", event.target.value)
                     }
                     onBlur={() => touchField("district")}
-                    className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base outline-none transition focus:border-brand-dark focus:ring-2 focus:ring-brand-dark/20"
+                    className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base outline-none transition focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
                   >
                     <option value="">Seleccioná una zona</option>
                     {coverageZones.map((zone) => (
@@ -453,7 +459,7 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
                     ))}
                   </select>
                   {getFieldError("district") ? (
-                    <p className="mt-2 text-sm leading-6 text-red-700">
+                    <p id="checkout-district-error" role="alert" className="mt-2 text-sm leading-6 text-red-700">
                       {getFieldError("district")}
                     </p>
                   ) : null}
@@ -465,15 +471,17 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
                   </span>
                   <textarea
                     value={form.address}
+                    aria-invalid={Boolean(getFieldError("address"))}
+                    aria-describedby={getFieldError("address") ? "checkout-address-error" : undefined}
                     onChange={(event) =>
                       updateField("address", event.target.value)
                     }
                     onBlur={() => touchField("address")}
-                    className="mt-2 min-h-28 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-dark focus:ring-2 focus:ring-brand-dark/20"
+                    className="mt-2 min-h-28 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
                     autoComplete="street-address"
                   />
                   {getFieldError("address") ? (
-                    <p className="mt-2 text-sm leading-6 text-red-700">
+                    <p id="checkout-address-error" role="alert" className="mt-2 text-sm leading-6 text-red-700">
                       {getFieldError("address")}
                     </p>
                   ) : null}
@@ -489,7 +497,7 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
                     onChange={(event) =>
                       updateField("references", event.target.value)
                     }
-                    className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-dark focus:ring-2 focus:ring-brand-dark/20"
+                    className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
                     placeholder="Color de portón, punto cercano, indicaciones"
                   />
                 </label>
@@ -501,12 +509,16 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
                   <textarea
                     value={form.notes}
                     onChange={(event) => updateField("notes", event.target.value)}
-                    className="mt-2 min-h-24 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-dark focus:ring-2 focus:ring-brand-dark/20"
+                    className="mt-2 min-h-24 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
                     placeholder="Horario preferido o detalle adicional"
                   />
                 </label>
 
-                <fieldset>
+                <fieldset
+                  role="radiogroup"
+                  aria-invalid={Boolean(getFieldError("paymentMethod"))}
+                  aria-describedby={getFieldError("paymentMethod") ? "checkout-paymentMethod-error" : undefined}
+                >
                   <legend className="text-sm font-semibold text-slate-800">
                     Método de pago
                   </legend>
@@ -542,7 +554,7 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
                     ))}
                   </div>
                   {getFieldError("paymentMethod") ? (
-                    <p className="mt-2 text-sm leading-6 text-red-700">
+                    <p id="checkout-paymentMethod-error" role="alert" className="mt-2 text-sm leading-6 text-red-700">
                       {getFieldError("paymentMethod")}
                     </p>
                   ) : null}
@@ -550,7 +562,7 @@ export function CheckoutClient({ coverageZones }: CheckoutClientProps) {
               </div>
 
               {submitError ? (
-                <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700">
+                <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700">
                   {submitError}
                 </p>
               ) : null}

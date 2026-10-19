@@ -115,7 +115,7 @@ export function CustomerOrdersClient() {
     return (
       <MessageState
         title="No pudimos cargar tus pedidos."
-        description="Intenta nuevamente en unos minutos."
+        description="Intentá nuevamente en unos minutos."
         action={
           <button
             type="button"

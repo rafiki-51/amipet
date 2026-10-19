@@ -12,6 +12,6 @@ export const siteConfig = {
   ],
   delivery: {
     isFree: true,
-    label: "Delivery gratis",
+    label: "Entrega gratis",
   },
 };

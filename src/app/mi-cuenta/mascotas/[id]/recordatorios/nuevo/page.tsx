@@ -166,7 +166,7 @@ export default async function NewReminderPage({
                 name="notes"
                 rows={4}
                 className="mt-2 w-full rounded-xl border border-brand-dark/25 px-4 py-3 text-base outline-none transition focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25 min-h-11 min-w-0 max-w-full bg-white text-slate-900 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-600"
-                placeholder="Agrega detalles opcionales para este recordatorio."
+                placeholder="Agregá detalles opcionales para este recordatorio."
               />
             </label>
 

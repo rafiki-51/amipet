@@ -603,7 +603,7 @@ export default async function MascotaDetallePage({
               </div>
               <div className="min-w-0 rounded-xl border border-brand-dark/10 bg-brand-light/50 p-4">
                 <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-600 [overflow-wrap:anywhere]">
-                  Fecha nacimiento
+                  Fecha de nacimiento
                 </dt>
                 <dd className="mt-2 text-base font-semibold text-brand-dark [overflow-wrap:anywhere]">
                   {formatBirthDate(pet.birth_date)}

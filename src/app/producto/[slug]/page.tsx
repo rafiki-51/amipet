@@ -70,7 +70,7 @@ export default async function ProductDetailPage({
                 {formatCurrency(product.price)}
               </p>
               <p className="mt-2 text-sm text-slate-500">
-                Delivery gratis dentro de la zona de cobertura.
+                Entrega gratis dentro de la zona de cobertura.
               </p>
             </div>
 

@@ -396,7 +396,7 @@ export function AdminPedidosClient() {
           />
         ) : (
           <section className="rounded-2xl border border-brand-dark/10 bg-white p-6 text-sm text-slate-600">
-            Selecciona un pedido para ver el detalle.
+            Seleccioná un pedido para ver el detalle.
           </section>
         )}
       </section>

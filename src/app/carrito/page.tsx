@@ -37,7 +37,7 @@ export default function CarritoPage() {
               Tu carrito está vacío
             </h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Agrega productos del catálogo para preparar tu pedido.
+              Agregá productos del catálogo para preparar tu pedido.
             </p>
             <Link
               href="/catalogo"
@@ -136,7 +136,7 @@ export default function CarritoPage() {
                   </span>
                 </div>
                 <div className="flex flex-wrap justify-between gap-3">
-                  <span>Delivery</span>
+                  <span>Entrega</span>
                   <span className="font-medium text-brand-dark">Gratis</span>
                 </div>
                 <div className="flex flex-wrap justify-between gap-3 border-t border-brand-dark/15 pt-3 text-base">

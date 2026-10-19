@@ -234,7 +234,7 @@ export function OrderDetail({
               </span>
             </div>
             <div className="flex flex-wrap justify-between gap-x-4 gap-y-1">
-              <span>Delivery</span>
+              <span>Entrega</span>
               <span className="font-medium text-emerald-700">
                 {order.deliveryFee === 0
                   ? "Gratis"
