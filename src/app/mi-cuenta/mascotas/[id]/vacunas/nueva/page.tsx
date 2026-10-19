@@ -5,12 +5,12 @@ import { requireCustomerPageUser } from "@/lib/auth/customer-pages";
 
 const errorMessages: Record<string, string> = {
   profile: "No pudimos validar tu perfil. Intentalo nuevamente.",
-  required: "Ingresa el nombre de la vacuna y la fecha aplicada.",
-  date: "Ingresa una fecha aplicada valida.",
+  required: "Ingresá el nombre de la vacuna y la fecha aplicada.",
+  date: "Ingresá una fecha aplicada válida.",
   "future-date": "La fecha aplicada no puede estar en el futuro.",
-  "next-due-date": "Ingresa una proxima dosis valida.",
+  "next-due-date": "Ingresá una próxima dosis válida.",
   status: "No pudimos validar el estado de la vacuna.",
-  archived: "Esta mascota esta archivada y no permite nuevas vacunas.",
+  archived: "Esta mascota está archivada y no permite nuevas vacunas.",
   save: "No pudimos guardar la vacuna. Intentalo nuevamente.",
 };
 
@@ -79,142 +79,142 @@ export default async function NuevaVacunaPage({
   const createPetVaccinationWithId = createPetVaccination.bind(null, pet.id);
 
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
-      <div className="mx-auto max-w-3xl">
+    <main className="min-h-screen bg-brand-light/50 px-4 py-8 text-slate-900 sm:px-6 sm:py-10">
+      <div className="mx-auto min-w-0 max-w-3xl">
         <div className="mb-6">
           <Link
             href={`/mi-cuenta/mascotas/${pet.id}/vacunas`}
-            className="text-sm font-semibold text-emerald-700 hover:text-emerald-800"
+            className="inline-flex min-h-11 items-center rounded-lg text-sm font-semibold text-brand-dark transition hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple focus-visible:ring-offset-2"
           >
             Volver a vacunas
           </Link>
         </div>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <section className="min-w-0 rounded-2xl border border-brand-dark/10 bg-white p-4 shadow-sm sm:p-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-600">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-dark">
                 Expediente digital
               </p>
-              <h1 className="mt-2 text-3xl font-bold tracking-tight">
+              <h1 className="mt-2 text-3xl font-bold tracking-tight text-brand-dark [overflow-wrap:anywhere]">
                 Agregar vacuna
               </h1>
-              <p className="mt-3 text-sm leading-6 text-slate-600">
-                Registra una vacuna aplicada para {displayValue(pet.name)}.
+              <p className="mt-3 text-sm leading-6 text-slate-600 [overflow-wrap:anywhere]">
+                Registrá una vacuna aplicada para {displayValue(pet.name)}.
               </p>
             </div>
-            <span className="inline-flex rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 sm:self-start">
+            <span className="inline-flex max-w-full rounded-full bg-brand-light px-4 py-2 text-sm font-semibold text-brand-dark [overflow-wrap:anywhere] sm:self-start">
               {displayValue(pet.species)}
             </span>
           </div>
 
           {errorMessage ? (
-            <p className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <p className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700 [overflow-wrap:anywhere]">
               {errorMessage}
             </p>
           ) : null}
 
-          <form action={createPetVaccinationWithId} className="mt-8 grid gap-5">
+          <form action={createPetVaccinationWithId} className="mt-8 grid min-w-0 gap-6">
             <input type="hidden" name="status" value="applied" />
 
-            <label className="block">
-              <span className="text-sm font-semibold text-slate-800">
+            <label className="block min-w-0">
+              <span className="text-sm font-semibold text-brand-dark">
                 Nombre de la vacuna
               </span>
               <input
                 type="text"
                 name="vaccine_name"
-                className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                className="mt-2 min-h-11 w-full min-w-0 max-w-full rounded-xl border border-brand-dark/25 bg-white px-4 py-3 text-base text-slate-900 outline-none transition placeholder:text-slate-500 focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
                 autoComplete="off"
                 required
               />
             </label>
 
-            <div className="grid gap-5 sm:grid-cols-2">
-              <label className="block">
-                <span className="text-sm font-semibold text-slate-800">
+            <div className="grid min-w-0 gap-5 sm:grid-cols-2">
+              <label className="block min-w-0">
+                <span className="text-sm font-semibold text-brand-dark">
                   Fecha aplicada
                 </span>
                 <input
                   type="date"
                   name="administered_at"
                   defaultValue={getTodayInputValue()}
-                  className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                  className="mt-2 min-h-11 w-full min-w-0 max-w-full rounded-xl border border-brand-dark/25 bg-white px-4 py-3 text-base text-slate-900 outline-none transition placeholder:text-slate-500 focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
                   required
                 />
               </label>
 
-              <label className="block">
-                <span className="text-sm font-semibold text-slate-800">
-                  Proxima dosis
+              <label className="block min-w-0">
+                <span className="text-sm font-semibold text-brand-dark">
+                  Próxima dosis
                 </span>
                 <input
                   type="date"
                   name="next_due_at"
-                  className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                  className="mt-2 min-h-11 w-full min-w-0 max-w-full rounded-xl border border-brand-dark/25 bg-white px-4 py-3 text-base text-slate-900 outline-none transition placeholder:text-slate-500 focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
                 />
               </label>
             </div>
 
-            <div className="grid gap-5 sm:grid-cols-3">
-              <label className="block">
-                <span className="text-sm font-semibold text-slate-800">
-                  Clinica
+            <div className="grid min-w-0 gap-5 sm:grid-cols-3">
+              <label className="block min-w-0">
+                <span className="text-sm font-semibold text-brand-dark">
+                  Clínica
                 </span>
                 <input
                   type="text"
                   name="clinic_name"
-                  className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                  className="mt-2 min-h-11 w-full min-w-0 max-w-full rounded-xl border border-brand-dark/25 bg-white px-4 py-3 text-base text-slate-900 outline-none transition placeholder:text-slate-500 focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
                   autoComplete="off"
                 />
               </label>
 
-              <label className="block">
-                <span className="text-sm font-semibold text-slate-800">
+              <label className="block min-w-0">
+                <span className="text-sm font-semibold text-brand-dark">
                   Veterinario
                 </span>
                 <input
                   type="text"
                   name="veterinarian_name"
-                  className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                  className="mt-2 min-h-11 w-full min-w-0 max-w-full rounded-xl border border-brand-dark/25 bg-white px-4 py-3 text-base text-slate-900 outline-none transition placeholder:text-slate-500 focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
                   autoComplete="off"
                 />
               </label>
 
-              <label className="block">
-                <span className="text-sm font-semibold text-slate-800">
+              <label className="block min-w-0">
+                <span className="text-sm font-semibold text-brand-dark">
                   Lote
                 </span>
                 <input
                   type="text"
                   name="batch_number"
-                  className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                  className="mt-2 min-h-11 w-full min-w-0 max-w-full rounded-xl border border-brand-dark/25 bg-white px-4 py-3 text-base text-slate-900 outline-none transition placeholder:text-slate-500 focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
                   autoComplete="off"
                 />
               </label>
             </div>
 
-            <label className="block">
-              <span className="text-sm font-semibold text-slate-800">
+            <label className="block min-w-0">
+              <span className="text-sm font-semibold text-brand-dark">
                 Notas
               </span>
               <textarea
                 name="notes"
                 rows={4}
-                className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                className="mt-2 min-h-11 w-full min-w-0 max-w-full rounded-xl border border-brand-dark/25 bg-white px-4 py-3 text-base text-slate-900 outline-none transition placeholder:text-slate-500 focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/25"
               />
             </label>
 
-            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <div className="flex flex-col-reverse gap-3 border-t border-brand-dark/10 pt-6 sm:flex-row sm:flex-wrap sm:justify-end">
               <Link
                 href={`/mi-cuenta/mascotas/${pet.id}/vacunas`}
-                className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-center text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-100"
+                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-brand-dark/20 bg-white px-5 py-3 text-center text-sm font-semibold text-brand-dark transition hover:bg-brand-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple focus-visible:ring-offset-2"
               >
                 Cancelar
               </Link>
               <button
                 type="submit"
-                className="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-dark px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-dark/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple focus-visible:ring-offset-2"
               >
                 Guardar vacuna
               </button>

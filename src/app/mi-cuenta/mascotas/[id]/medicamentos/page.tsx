@@ -39,7 +39,7 @@ const errorMessages: Record<string, string> = {
   complete: "No pudimos completar el medicamento. Intentalo nuevamente.",
   pause: "No pudimos pausar el medicamento. Intentalo nuevamente.",
   reopen: "No pudimos reabrir el medicamento. Intentalo nuevamente.",
-  archived: "Esta mascota esta archivada y solo permite consulta.",
+  archived: "Esta mascota está archivada y solo permite consulta.",
 };
 
 const medicationTypeLabels: Record<string, string> = {
@@ -101,68 +101,68 @@ function MedicationCard({
   canEdit: boolean;
 }) {
   return (
-    <article className="rounded-xl border border-slate-100 bg-slate-50 p-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="text-lg font-bold tracking-tight text-slate-950">
+    <article className="rounded-xl border border-brand-dark/10 bg-brand-light/50 p-4 min-w-0">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between min-w-0">
+        <div className="min-w-0">
+          <p className="text-lg font-bold tracking-tight text-brand-dark [overflow-wrap:anywhere]">
             {displayValue(medication.medication_name)}
           </p>
-          <p className="mt-1 text-sm font-semibold text-slate-700">
+          <p className="mt-1 text-sm font-semibold text-slate-700 [overflow-wrap:anywhere]">
             Inicio: {formatDate(medication.start_date)}
           </p>
           {medication.end_date ? (
-            <p className="mt-1 text-sm font-semibold text-slate-700">
+            <p className="mt-1 text-sm font-semibold text-slate-700 [overflow-wrap:anywhere]">
               Fin: {formatDate(medication.end_date)}
             </p>
           ) : null}
         </div>
-        <div className="flex flex-wrap gap-2 sm:justify-end">
-          <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
+        <div className="flex flex-wrap gap-2 sm:justify-end min-w-0">
+          <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 [overflow-wrap:anywhere]">
             {formatMedicationType(medication.medication_type)}
           </span>
-          <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+          <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 [overflow-wrap:anywhere]">
             {formatStatus(medication.status)}
           </span>
         </div>
       </div>
 
-      <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 min-w-0">
         {medication.dosage ? (
-          <div className="rounded-xl bg-white p-4">
-            <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+          <div className="rounded-xl bg-white p-4 min-w-0">
+            <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 [overflow-wrap:anywhere]">
               Dosis
             </dt>
-            <dd className="mt-2 text-sm font-semibold text-slate-950">
+            <dd className="mt-2 text-sm font-semibold text-brand-dark [overflow-wrap:anywhere]">
               {medication.dosage}
             </dd>
           </div>
         ) : null}
         {medication.frequency ? (
-          <div className="rounded-xl bg-white p-4">
-            <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+          <div className="rounded-xl bg-white p-4 min-w-0">
+            <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 [overflow-wrap:anywhere]">
               Frecuencia
             </dt>
-            <dd className="mt-2 text-sm font-semibold text-slate-950">
+            <dd className="mt-2 text-sm font-semibold text-brand-dark [overflow-wrap:anywhere]">
               {medication.frequency}
             </dd>
           </div>
         ) : null}
         {medication.route ? (
-          <div className="rounded-xl bg-white p-4">
-            <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-              Via
+          <div className="rounded-xl bg-white p-4 min-w-0">
+            <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 [overflow-wrap:anywhere]">
+              Vía
             </dt>
-            <dd className="mt-2 text-sm font-semibold text-slate-950">
+            <dd className="mt-2 text-sm font-semibold text-brand-dark [overflow-wrap:anywhere]">
               {medication.route}
             </dd>
           </div>
         ) : null}
         {medication.prescribed_by ? (
-          <div className="rounded-xl bg-white p-4">
-            <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+          <div className="rounded-xl bg-white p-4 min-w-0">
+            <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 [overflow-wrap:anywhere]">
               Prescrito por
             </dt>
-            <dd className="mt-2 text-sm font-semibold text-slate-950">
+            <dd className="mt-2 text-sm font-semibold text-brand-dark [overflow-wrap:anywhere]">
               {medication.prescribed_by}
             </dd>
           </div>
@@ -170,21 +170,21 @@ function MedicationCard({
       </dl>
 
       {medication.notes ? (
-        <p className="mt-4 rounded-xl bg-white p-4 text-sm leading-6 text-slate-600">
+        <p className="mt-4 rounded-xl bg-white p-4 text-sm leading-6 text-slate-600 [overflow-wrap:anywhere]">
           {medication.notes}
         </p>
       ) : null}
 
-      <p className="mt-4 text-xs leading-5 text-slate-500">
+      <p className="mt-4 text-xs leading-5 text-slate-500 [overflow-wrap:anywhere]">
         Creado: {formatDate(medication.created_at)} - Actualizado:{" "}
         {formatDate(medication.updated_at)}
       </p>
 
       {canEdit ? (
-        <div className="mt-4 flex justify-end">
+        <div className="mt-4 flex justify-end min-w-0">
           <Link
             href={`/mi-cuenta/mascotas/${petId}/medicamentos/${medication.id}/editar`}
-            className="text-sm font-semibold text-emerald-700 hover:text-emerald-800"
+            className="text-sm font-semibold text-brand-dark hover:underline min-h-11 min-w-11 items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple focus-visible:ring-offset-2 inline-flex rounded-lg"
           >
             Editar
           </Link>
@@ -260,43 +260,43 @@ export default async function MedicamentosPage({
     : null;
 
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-6">
+    <main className="min-h-screen bg-brand-light/50 px-4 sm:px-6 py-8 sm:py-10 text-slate-900">
+      <div className="mx-auto max-w-5xl min-w-0">
+        <div className="mb-6 min-w-0">
           <Link
             href={`/mi-cuenta/mascotas/${pet.id}`}
-            className="text-sm font-semibold text-emerald-700 hover:text-emerald-800"
+            className="text-sm font-semibold text-brand-dark hover:underline min-h-11 min-w-11 items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple focus-visible:ring-offset-2 inline-flex rounded-lg"
           >
             Volver a la mascota
           </Link>
         </div>
 
-        <header className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-600">
+        <header className="rounded-2xl border border-brand-dark/10 bg-white p-4 shadow-sm sm:p-8 min-w-0">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-dark [overflow-wrap:anywhere]">
             Expediente digital
           </p>
-          <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between min-w-0">
+            <div className="min-w-0">
+              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl text-brand-dark [overflow-wrap:anywhere]">
                 Medicamentos
               </h1>
-              <p className="mt-3 text-sm leading-6 text-slate-600">
+              <p className="mt-3 text-sm leading-6 text-slate-600 [overflow-wrap:anywhere]">
                 {displayValue(pet.name)}
               </p>
               {isArchived ? (
-                <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-800">
-                  Esta mascota esta archivada. Los medicamentos quedan
+                <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-800 [overflow-wrap:anywhere]">
+                  Esta mascota está archivada. Los medicamentos quedan
                   disponibles solo para consulta.
                 </p>
               ) : null}
             </div>
-            <div className="flex flex-col gap-3 sm:items-end">
-              <div className="flex flex-wrap gap-2 sm:justify-end">
-                <span className="inline-flex rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800">
+            <div className="flex flex-col gap-3 sm:items-end min-w-0">
+              <div className="flex flex-wrap gap-2 sm:justify-end min-w-0">
+                <span className="inline-flex rounded-full bg-brand-light px-4 py-2 text-sm font-semibold text-brand-dark [overflow-wrap:anywhere]">
                   {displayValue(pet.species)}
                 </span>
                 {isArchived ? (
-                  <span className="inline-flex rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">
+                  <span className="inline-flex rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 [overflow-wrap:anywhere]">
                     Archivada
                   </span>
                 ) : null}
@@ -304,7 +304,7 @@ export default async function MedicamentosPage({
               {!isArchived ? (
                 <Link
                   href={`/mi-cuenta/mascotas/${pet.id}/medicamentos/nuevo`}
-                  className="inline-flex justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                  className="inline-flex justify-center rounded-xl bg-brand-dark px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-dark/90 min-h-11 min-w-11 items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple focus-visible:ring-offset-2"
                 >
                   Agregar medicamento
                 </Link>
@@ -313,80 +313,80 @@ export default async function MedicamentosPage({
           </div>
         </header>
 
-        <section className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+        <section className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4 min-w-0">
+          <div className="rounded-2xl border border-brand-dark/10 bg-white p-4 shadow-sm min-w-0 sm:p-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 [overflow-wrap:anywhere]">
               Activos
             </p>
-            <p className="mt-3 text-2xl font-bold tracking-tight text-slate-950">
+            <p className="mt-3 text-2xl font-bold tracking-tight text-brand-dark [overflow-wrap:anywhere]">
               {activeCount}
             </p>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+          <div className="rounded-2xl border border-brand-dark/10 bg-white p-4 shadow-sm min-w-0 sm:p-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 [overflow-wrap:anywhere]">
               Completados
             </p>
-            <p className="mt-3 text-2xl font-bold tracking-tight text-slate-950">
+            <p className="mt-3 text-2xl font-bold tracking-tight text-brand-dark [overflow-wrap:anywhere]">
               {completedCount}
             </p>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+          <div className="rounded-2xl border border-brand-dark/10 bg-white p-4 shadow-sm min-w-0 sm:p-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 [overflow-wrap:anywhere]">
               Pausados
             </p>
-            <p className="mt-3 text-2xl font-bold tracking-tight text-slate-950">
+            <p className="mt-3 text-2xl font-bold tracking-tight text-brand-dark [overflow-wrap:anywhere]">
               {pausedCount}
             </p>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+          <div className="rounded-2xl border border-brand-dark/10 bg-white p-4 shadow-sm min-w-0 sm:p-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 [overflow-wrap:anywhere]">
               Total registros
             </p>
-            <p className="mt-3 text-2xl font-bold tracking-tight text-slate-950">
+            <p className="mt-3 text-2xl font-bold tracking-tight text-brand-dark [overflow-wrap:anywhere]">
               {totalCount}
             </p>
           </div>
         </section>
 
         {errorMessage ? (
-          <p className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <p className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 [overflow-wrap:anywhere]">
             {errorMessage}
           </p>
         ) : null}
 
-        <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h2 className="text-xl font-bold tracking-tight">Activos</h2>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+        <section className="mt-5 rounded-2xl border border-brand-dark/10 bg-white p-4 shadow-sm min-w-0 sm:p-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between min-w-0">
+            <div className="min-w-0">
+              <h2 className="text-xl font-bold tracking-tight text-brand-dark [overflow-wrap:anywhere]">Activos</h2>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 [overflow-wrap:anywhere]">
                 Medicamentos o tratamientos activos y pausados.
               </p>
             </div>
           </div>
 
           {medications.length === 0 ? (
-            <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
-              <h3 className="text-lg font-bold tracking-tight">
-                Aun no hay medicamentos registrados.
+            <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-brand-light/50 px-6 py-10 text-center min-w-0">
+              <h3 className="text-lg font-bold tracking-tight text-brand-dark [overflow-wrap:anywhere]">
+                Aún no hay medicamentos registrados.
               </h3>
-              <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-600">
+              <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-600 [overflow-wrap:anywhere]">
                 {isArchived
                   ? "No hay medicamentos registrados para consultar."
-                  : "Cuando agregues medicamentos o tratamientos, apareceran aqui ordenados desde el mas reciente."}
+                  : "Cuando agregues medicamentos o tratamientos, aparecerán aquí ordenados desde el más reciente."}
               </p>
             </div>
           ) : activeMedications.length === 0 ? (
-            <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
-              <h3 className="text-lg font-bold tracking-tight">
+            <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-brand-light/50 px-6 py-10 text-center min-w-0">
+              <h3 className="text-lg font-bold tracking-tight text-brand-dark [overflow-wrap:anywhere]">
                 No hay medicamentos activos.
               </h3>
-              <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-600">
+              <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-600 [overflow-wrap:anywhere]">
                 Los medicamentos completados o cancelados aparecen en el
                 historial.
               </p>
             </div>
           ) : (
-            <div className="mt-6 grid gap-4">
+            <div className="mt-6 grid gap-4 min-w-0">
               {activeMedications.map((medication) => (
                 <MedicationCard
                   key={medication.id}
@@ -400,22 +400,22 @@ export default async function MedicamentosPage({
         </section>
 
         {medications.length > 0 ? (
-          <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div>
-              <h2 className="text-xl font-bold tracking-tight">Historial</h2>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+          <section className="mt-5 rounded-2xl border border-brand-dark/10 bg-white p-4 shadow-sm min-w-0 sm:p-6">
+            <div className="min-w-0">
+              <h2 className="text-xl font-bold tracking-tight text-brand-dark [overflow-wrap:anywhere]">Historial</h2>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 [overflow-wrap:anywhere]">
                 Medicamentos y tratamientos completados o cancelados.
               </p>
             </div>
 
             {historyMedications.length === 0 ? (
-              <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
-                <h3 className="text-lg font-bold tracking-tight">
-                  Aun no hay medicamentos en historial.
+              <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-brand-light/50 px-6 py-10 text-center min-w-0">
+                <h3 className="text-lg font-bold tracking-tight text-brand-dark [overflow-wrap:anywhere]">
+                  Aún no hay medicamentos en historial.
                 </h3>
               </div>
             ) : (
-              <div className="mt-6 grid gap-4">
+              <div className="mt-6 grid gap-4 min-w-0">
                 {historyMedications.map((medication) => (
                   <MedicationCard
                     key={medication.id}
